@@ -1,5 +1,6 @@
 // src/store/useFinanceStore.ts
 import { create } from 'zustand';
+import { fetchPlaidFinanceSnapshot } from '@/lib/backendApi';
 
 export interface Account {
   id: string;
@@ -57,6 +58,8 @@ interface FinanceState {
   toggleAiOptIn: () => void;
   setAccounts: (accounts: Account[]) => void;
   setTransactions: (transactions: Transaction[]) => void;
+  hydratePlaidFinanceData: (token: string) => Promise<void>;
+  clearPlaidFinanceData: () => void;
   disconnectBankingAccount: (accountId: string) => void;
   disconnectInvestmentAccount: (accountId: string) => void;
   syncConnectedWalletPosition: (payload: SyncWalletPayload) => Promise<void>;
@@ -91,6 +94,30 @@ export const useFinanceStore = create<FinanceState>((set) => ({
   toggleAiOptIn: () => set((state) => ({ isAiOptedIn: !state.isAiOptedIn })),
   setAccounts: (accounts) => set({ accounts }),
   setTransactions: (transactions) => set({ transactions }),
+  hydratePlaidFinanceData: async (token) => {
+    const snapshot = await fetchPlaidFinanceSnapshot(token);
+
+    set((state) => {
+      const walletAccounts = state.investmentAccounts.filter((account) => account.type === 'Web3 Wallet');
+      const walletInvestments = state.investments.filter((investment) =>
+        walletAccounts.some((account) => account.id === investment.accountId)
+      );
+
+      return {
+        accounts: snapshot.accounts,
+        transactions: snapshot.transactions,
+        investmentAccounts: [...snapshot.investmentAccounts, ...walletAccounts],
+        investments: [...snapshot.investments, ...walletInvestments],
+      };
+    });
+  },
+  clearPlaidFinanceData: () =>
+    set({
+      accounts: [],
+      transactions: [],
+      investmentAccounts: [],
+      investments: [],
+    }),
   disconnectBankingAccount: (accountId) => {
     set((state) => ({
       accounts: state.accounts.filter((acc) => acc.id !== accountId),

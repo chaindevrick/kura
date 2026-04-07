@@ -1,4 +1,5 @@
-const DEFAULT_BACKEND_URL = 'http://localhost:8080';
+const DEFAULT_BACKEND_URL =
+  process.env.NODE_ENV === 'production' ? 'http://localhost:8080' : 'https://localhost:8080';
 const AUTH_TOKEN_KEY = 'kura.auth.token';
 
 export interface BackendUser {
@@ -15,6 +16,50 @@ export interface BackendUserProfile extends BackendUser {
 export interface AuthResponse {
   token: string;
   user: BackendUserProfile;
+}
+
+export interface BackendFinanceAccount {
+  id: string;
+  name: string;
+  balance: number;
+  type: 'checking' | 'saving' | 'credit' | 'crypto';
+  logo: string;
+}
+
+export interface BackendFinanceTransaction {
+  id: string;
+  accountId: string;
+  amount: string;
+  date: string;
+  merchant: string;
+  category: string;
+  type: 'credit' | 'deposit' | 'transfer';
+}
+
+export interface BackendFinanceInvestmentAccount {
+  id: string;
+  name: string;
+  type: 'Broker' | 'Exchange' | 'Web3 Wallet';
+  logo: string;
+}
+
+export interface BackendFinanceInvestment {
+  id: string;
+  accountId: string;
+  symbol: string;
+  name: string;
+  holdings: number;
+  currentPrice: number;
+  change24h: number;
+  type: 'crypto' | 'stock';
+  logo: string;
+}
+
+export interface BackendFinanceSnapshot {
+  accounts: BackendFinanceAccount[];
+  transactions: BackendFinanceTransaction[];
+  investmentAccounts: BackendFinanceInvestmentAccount[];
+  investments: BackendFinanceInvestment[];
 }
 
 interface ApiErrorBody {
@@ -137,6 +182,14 @@ export const exchangePlaidPublicToken = (
       method: 'POST',
       body: JSON.stringify(payload),
     },
+    token
+  );
+};
+
+export const fetchPlaidFinanceSnapshot = (token: string): Promise<BackendFinanceSnapshot> => {
+  return backendRequest<BackendFinanceSnapshot>(
+    '/api/plaid/finance-snapshot',
+    { method: 'GET' },
     token
   );
 };

@@ -1,6 +1,11 @@
 import { Configuration, PlaidApi, PlaidEnvironments } from 'plaid';
 import dotenv from 'dotenv';
-dotenv.config();
+
+const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env.development';
+const envResult = dotenv.config({ path: envFile });
+if (envResult.error) {
+  dotenv.config();
+}
 
 const plaidEnv = process.env.PLAID_ENV || 'sandbox';
 const basePath = PlaidEnvironments[plaidEnv];

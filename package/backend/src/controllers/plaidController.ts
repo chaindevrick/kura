@@ -5,9 +5,84 @@ import { prisma } from '../lib/prisma';
 import { CountryCode, Products } from 'plaid';
 import { appLogger } from '../lib/logger';
 
+type BankingAccountType = 'checking' | 'saving' | 'credit' | 'crypto';
+type TransactionType = 'credit' | 'deposit' | 'transfer';
+type InvestmentAccountType = 'Broker' | 'Exchange' | 'Web3 Wallet';
+type InvestmentType = 'crypto' | 'stock';
+
+interface PlaidAccountPayload {
+  id: string;
+  name: string;
+  balance: number;
+  type: BankingAccountType;
+  logo: string;
+}
+
+interface PlaidTransactionPayload {
+  id: string;
+  accountId: string;
+  amount: string;
+  date: string;
+  merchant: string;
+  category: string;
+  type: TransactionType;
+}
+
+interface PlaidInvestmentAccountPayload {
+  id: string;
+  name: string;
+  type: InvestmentAccountType;
+  logo: string;
+}
+
+interface PlaidInvestmentPayload {
+  id: string;
+  accountId: string;
+  symbol: string;
+  name: string;
+  holdings: number;
+  currentPrice: number;
+  change24h: number;
+  type: InvestmentType;
+  logo: string;
+}
+
+const PLAID_FALLBACK_LOGO = 'https://www.google.com/s2/favicons?domain=plaid.com&sz=128';
+
+const mapPlaidAccountType = (type: string, subtype?: string | null): BankingAccountType => {
+  const normalizedSubtype = (subtype || '').toLowerCase();
+  if (type === 'credit') {
+    return 'credit';
+  }
+  if (normalizedSubtype.includes('saving')) {
+    return 'saving';
+  }
+  if (normalizedSubtype.includes('check')) {
+    return 'checking';
+  }
+  return 'checking';
+};
+
+const mapPlaidTransactionType = (amount: number, category?: string | null): TransactionType => {
+  const normalizedCategory = (category || '').toLowerCase();
+  if (normalizedCategory.includes('transfer')) {
+    return 'transfer';
+  }
+  return amount < 0 ? 'deposit' : 'credit';
+};
+
+const mapPlaidInvestmentType = (securityType?: string | null): InvestmentType => {
+  const normalized = (securityType || '').toLowerCase();
+  return normalized.includes('crypto') ? 'crypto' : 'stock';
+};
+
 // 1. 產生一次性 Link Token 給前端
 export const createLinkToken = async (req: AuthRequest, res: Response) => {
   try {
+    const defaultFrontendUrl =
+      process.env.NODE_ENV === 'production' ? 'http://localhost:3000' : 'https://localhost:3000';
+    const plaidRedirectUri = process.env.PLAID_REDIRECT_URI || `${defaultFrontendUrl}/dashboard`;
+
     const request: any = {
       user: { client_user_id: req.userId! },
       client_name: 'Kura Finance',
@@ -16,9 +91,7 @@ export const createLinkToken = async (req: AuthRequest, res: Response) => {
       language: 'en',
     };
 
-    if (process.env.PLAID_REDIRECT_URI) {
-      request.redirect_uri = process.env.PLAID_REDIRECT_URI; // 歐盟 Oauth 需要
-    }
+    request.redirect_uri = plaidRedirectUri;
 
     const response = await plaidClient.linkTokenCreate(request);
     res.json({ link_token: response.data.link_token });
@@ -59,5 +132,178 @@ export const exchangePublicToken = async (req: AuthRequest, res: Response) => {
       userId: req.userId,
     });
     res.status(500).json({ error: 'Token 交換失敗' });
+  }
+};
+
+export const getFinanceSnapshot = async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.userId) {
+      res.status(401).json({ error: '未登入' });
+      return;
+    }
+
+    const plaidItems = await prisma.plaidItem.findMany({
+      where: { userId: req.userId },
+      select: {
+        id: true,
+        accessToken: true,
+        institutionName: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (plaidItems.length === 0) {
+      res.json({
+        accounts: [] as PlaidAccountPayload[],
+        transactions: [] as PlaidTransactionPayload[],
+        investmentAccounts: [] as PlaidInvestmentAccountPayload[],
+        investments: [] as PlaidInvestmentPayload[],
+      });
+      return;
+    }
+
+    const accounts: PlaidAccountPayload[] = [];
+    const transactions: PlaidTransactionPayload[] = [];
+    const investmentAccounts: PlaidInvestmentAccountPayload[] = [];
+    const investments: PlaidInvestmentPayload[] = [];
+
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - 30);
+    const startDateString = startDate.toISOString().slice(0, 10);
+    const endDateString = new Date().toISOString().slice(0, 10);
+
+    for (const item of plaidItems) {
+      let plaidAccountsById = new Map<string, { name: string; subtype?: string | null }>();
+
+      try {
+        const accountsResponse = await plaidClient.accountsGet({
+          access_token: item.accessToken,
+        });
+
+        for (const account of accountsResponse.data.accounts) {
+          plaidAccountsById.set(account.account_id, {
+            name: account.name,
+            subtype: account.subtype,
+          });
+
+          accounts.push({
+            id: account.account_id,
+            name: `${item.institutionName} · ${account.name}`,
+            balance: Number(account.balances.current || 0),
+            type: mapPlaidAccountType(account.type, account.subtype),
+            logo: PLAID_FALLBACK_LOGO,
+          });
+        }
+      } catch (error: any) {
+        appLogger.warn('Fetch Plaid accounts failed for item', {
+          error: error.response?.data || error.message || error,
+          plaidItemId: item.id,
+          userId: req.userId,
+        });
+      }
+
+      try {
+        const txResponse = await plaidClient.transactionsGet({
+          access_token: item.accessToken,
+          start_date: startDateString,
+          end_date: endDateString,
+          options: { count: 100 },
+        });
+
+        for (const tx of txResponse.data.transactions) {
+          const accountMeta = plaidAccountsById.get(tx.account_id);
+          const primaryCategory = tx.personal_finance_category?.primary || tx.category?.[0] || 'Uncategorized';
+
+          transactions.push({
+            id: tx.transaction_id,
+            accountId: tx.account_id,
+            amount: Number(Math.abs(tx.amount)).toFixed(2),
+            date: tx.date,
+            merchant: tx.merchant_name || tx.name,
+            category: primaryCategory,
+            type: mapPlaidTransactionType(tx.amount, primaryCategory),
+          });
+
+          if (!accountMeta) {
+            plaidAccountsById.set(tx.account_id, {
+              name: tx.account_owner || 'Plaid Account',
+              subtype: null,
+            });
+          }
+        }
+      } catch (error: any) {
+        appLogger.warn('Fetch Plaid transactions failed for item', {
+          error: error.response?.data || error.message || error,
+          plaidItemId: item.id,
+          userId: req.userId,
+        });
+      }
+
+      try {
+        const holdingsResponse = await plaidClient.investmentsHoldingsGet({
+          access_token: item.accessToken,
+        });
+
+        const securitiesById = new Map(
+          holdingsResponse.data.securities.map((security) => [security.security_id, security])
+        );
+
+        for (const account of holdingsResponse.data.accounts) {
+          investmentAccounts.push({
+            id: account.account_id,
+            name: `${item.institutionName} · ${account.name}`,
+            type: 'Broker',
+            logo: PLAID_FALLBACK_LOGO,
+          });
+        }
+
+        for (const holding of holdingsResponse.data.holdings) {
+          const security = securitiesById.get(holding.security_id);
+          if (!security) continue;
+
+          investments.push({
+            id: `${holding.account_id}-${holding.security_id}`,
+            accountId: holding.account_id,
+            symbol: security.ticker_symbol || security.name || 'N/A',
+            name: security.name || security.ticker_symbol || 'Unknown Asset',
+            holdings: Number(holding.quantity || 0),
+            currentPrice: Number(holding.institution_price || 0),
+            change24h: 0,
+            type: mapPlaidInvestmentType(security.type),
+            logo: PLAID_FALLBACK_LOGO,
+          });
+        }
+      } catch (error: any) {
+        appLogger.info('No investment holdings available for Plaid item', {
+          error: error.response?.data || error.message || error,
+          plaidItemId: item.id,
+          userId: req.userId,
+        });
+      }
+    }
+
+    const dedupedAccounts = Array.from(new Map(accounts.map((acc) => [acc.id, acc])).values());
+    const dedupedTransactions = Array.from(
+      new Map(transactions.map((tx) => [String(tx.id), tx])).values()
+    ).sort((a, b) => (a.date < b.date ? 1 : -1));
+    const dedupedInvestmentAccounts = Array.from(
+      new Map(investmentAccounts.map((acc) => [acc.id, acc])).values()
+    );
+    const dedupedInvestments = Array.from(
+      new Map(investments.map((inv) => [inv.id, inv])).values()
+    );
+
+    res.json({
+      accounts: dedupedAccounts,
+      transactions: dedupedTransactions,
+      investmentAccounts: dedupedInvestmentAccounts,
+      investments: dedupedInvestments,
+    });
+  } catch (error: any) {
+    appLogger.error('Get finance snapshot failed', {
+      error: error.response?.data || error.message || error,
+      userId: req.userId,
+    });
+    res.status(500).json({ error: '無法取得 Plaid 金融資料' });
   }
 };

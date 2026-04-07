@@ -1,5 +1,6 @@
 // src/app/layout.tsx
 import type { Metadata } from "next";
+import Script from "next/script";
 import "./globals.css";
 import TopNav from "./components/TopNav";
 import Web3ModalProvider from '@/context/Web3ModalProvider';
@@ -16,6 +17,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        {/* Load Plaid Link script once globally to prevent duplication */}
+        <Script
+          src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"
+          strategy="beforeInteractive"
+        />
+      </head>
       <body className="h-screen bg-[#0B0B0F] text-white flex flex-col overflow-hidden antialiased selection:bg-[#8B5CF6]/30">
         
         {/* 💡 用 Provider 包住整個應用程式，確保 Navbar 也能讀取錢包狀態 */}
