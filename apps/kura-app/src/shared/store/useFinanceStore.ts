@@ -1,4 +1,8 @@
 import { create } from 'zustand';
+import {
+  fetchPlaidFinanceSnapshot,
+} from '../api/plaidApi';
+import Logger from '../utils/Logger';
 
 export interface Account {
   id: string;
@@ -47,7 +51,16 @@ interface SyncWalletPayload {
   nativeBalance: number;
 }
 
+export interface AssetSnapshot {
+  timestamp: number; // Unix timestamp in milliseconds
+  totalAssets: number; // 总资产（USD）
+  bankingBalance: number; // 银行账户总余额
+  investmentValue: number; // 投资总价值
+  cryptoValue: number; // 加密货币总价值
+}
+
 interface FinanceState {
+  // Data
   accounts: Account[];
   transactions: Transaction[];
   investmentAccounts: InvestmentAccount[];
@@ -55,16 +68,37 @@ interface FinanceState {
   isAiOptedIn: boolean;
   selectedTimeRange: '1M' | '3M' | '6M' | '1Y' | 'All';
   chartDataByTimeRange: Record<string, number[]>;
+  
+  // Asset Performance Tracking
+  assetHistory: AssetSnapshot[]; // 历史资产快照
+  lastRecordedTime: number | null; // 上次记录的时间
+  
+  // Loading & Error States
+  isLoadingPlaidData: boolean;
+  plaidError: string | null;
+  
+  // UI Actions
   toggleAiOptIn: () => void;
   setAccounts: (accounts: Account[]) => void;
   setTransactions: (transactions: Transaction[]) => void;
   setInvestmentAccounts: (accounts: InvestmentAccount[]) => void;
   setInvestments: (investments: Investment[]) => void;
   setSelectedTimeRange: (timeRange: '1M' | '3M' | '6M' | '1Y' | 'All') => void;
+  
+  // Plaid Operations
   hydratePlaidFinanceData: (token: string) => Promise<void>;
   clearPlaidFinanceData: () => void;
-  disconnectBankingAccount: (accountId: string) => void;
+  disconnectBankingAccount: (accountId: string) => Promise<void>;
   disconnectInvestmentAccount: (accountId: string) => void;
+  updateAccountOrder: (accountIds: string[], investmentAccountIds: string[]) => Promise<void>;
+  
+  // Asset History Operations (for performance tracking)
+  recordAssetSnapshot: () => void; // 记录当前资产快照
+  getAssetSnapshotsByTimeRange: (days: number) => AssetSnapshot[]; // 获取特定时间范围内的快照
+  clearAssetHistory: () => void; // 清空历史数据
+  calculateTotalAssets: () => number; // 计算当前总资产
+  
+  // Web3 Wallet Operations
   syncConnectedWalletPosition: (payload: SyncWalletPayload) => Promise<void>;
   removeConnectedWalletPosition: (address: string, chainId: number) => void;
 }
@@ -87,196 +121,144 @@ const CHAIN_MARKET_META: Record<number, { coingeckoId: string; logo: string; fal
   },
 };
 
-const mockFinanceSnapshot = {
-  accounts: [
-    {
-      id: 'checking-1',
-      name: 'BofA Checking',
-      balance: 12450,
-      type: 'checking' as const,
-      logo: 'https://www.google.com/s2/favicons?domain=bankofamerica.com&sz=128',
-    },
-    {
-      id: 'credit-1',
-      name: 'Sapphire Preferred',
-      balance: 4200.5,
-      type: 'credit' as const,
-      logo: 'https://www.google.com/s2/favicons?domain=chase.com&sz=128',
-    },
-    {
-      id: 'saving-1',
-      name: 'Marcus Savings',
-      balance: 27849.5,
-      type: 'saving' as const,
-      logo: 'https://www.google.com/s2/favicons?domain=marcus.com&sz=128',
-    },
-  ],
-  transactions: [
-    {
-      id: 1,
-      accountId: 'credit-1',
-      accountName: 'Sapphire Preferred',
-      accountType: 'credit' as const,
-      amount: '124.50',
-      date: 'April 5, 2026',
-      merchant: 'Whole Foods',
-      category: 'Groceries',
-      type: 'credit' as const,
-    },
-    {
-      id: 2,
-      accountId: 'credit-1',
-      accountName: 'Sapphire Preferred',
-      accountType: 'credit' as const,
-      amount: '45.00',
-      date: 'April 4, 2026',
-      merchant: 'Uber Eats',
-      category: 'Dining',
-      type: 'credit' as const,
-    },
-    {
-      id: 3,
-      accountId: 'credit-1',
-      accountName: 'Sapphire Preferred',
-      accountType: 'credit' as const,
-      amount: '12.99',
-      date: 'April 3, 2026',
-      merchant: 'Netflix',
-      category: 'Entertainment',
-      type: 'credit' as const,
-    },
-    {
-      id: 4,
-      accountId: 'checking-1',
-      accountName: 'BofA Checking',
-      accountType: 'checking' as const,
-      amount: '8.50',
-      date: 'April 2, 2026',
-      merchant: 'Blue Bottle Coffee',
-      category: 'Dining',
-      type: 'credit' as const,
-    },
-    {
-      id: 5,
-      accountId: 'checking-1',
-      accountName: 'BofA Checking',
-      accountType: 'checking' as const,
-      amount: '2500.00',
-      date: 'April 1, 2026',
-      merchant: 'Company Payroll',
-      category: 'Income',
-      type: 'deposit' as const,
-    },
-    {
-      id: 6,
-      accountId: 'saving-1',
-      accountName: 'Marcus Savings',
-      accountType: 'saving' as const,
-      amount: '120.00',
-      date: 'March 28, 2026',
-      merchant: 'Interest Paid',
-      category: 'Income',
-      type: 'deposit' as const,
-    },
-  ],
-  investmentAccounts: [
-    {
-      id: 'broker-1',
-      name: 'Vanguard Brokerage',
-      type: 'Broker' as const,
-      logo: 'https://www.google.com/s2/favicons?domain=vanguard.com&sz=128',
-    },
-    {
-      id: 'exchange-1',
-      name: 'Coinbase Exchange',
-      type: 'Exchange' as const,
-      logo: 'https://www.google.com/s2/favicons?domain=coinbase.com&sz=128',
-    },
-  ],
-  investments: [
-    {
-      id: 'stock-aapl',
-      accountId: 'broker-1',
-      symbol: 'AAPL',
-      name: 'Apple Inc.',
-      holdings: 10,
-      currentPrice: 210.25,
-      change24h: 1.8,
-      type: 'stock' as const,
-      logo: 'https://www.google.com/s2/favicons?domain=apple.com&sz=128',
-    },
-    {
-      id: 'stock-msft',
-      accountId: 'broker-1',
-      symbol: 'MSFT',
-      name: 'Microsoft',
-      holdings: 4,
-      currentPrice: 412.13,
-      change24h: 0.9,
-      type: 'stock' as const,
-      logo: 'https://www.google.com/s2/favicons?domain=microsoft.com&sz=128',
-    },
-    {
-      id: 'crypto-eth',
-      accountId: 'exchange-1',
-      symbol: 'ETH',
-      name: 'Ethereum',
-      holdings: 1.75,
-      currentPrice: 3482.12,
-      change24h: 2.4,
-      type: 'crypto' as const,
-      logo: 'https://assets.coingecko.com/coins/images/279/large/ethereum.png',
-    },
-  ],
-};
+// Mock data removed - now using real data from backend via Plaid
 
-export const useFinanceStore = create<FinanceState>((set) => ({
-  accounts: mockFinanceSnapshot.accounts,
-  transactions: mockFinanceSnapshot.transactions,
-  investmentAccounts: mockFinanceSnapshot.investmentAccounts,
-  investments: mockFinanceSnapshot.investments,
-  isAiOptedIn: true,
+export const useFinanceStore = create<FinanceState>((set, get) => ({
+  // Initial State
+  accounts: [],
+  transactions: [],
+  investmentAccounts: [],
+  investments: [],
+  isAiOptedIn: false,
   selectedTimeRange: '1M',
   chartDataByTimeRange: {
-    '1M': [0.4, 0.6, 0.5, 0.8, 0.3, 0.7, 0.5, 0.9, 0.6, 0.4, 0.7],
-    '3M': [0.5, 0.4, 0.7, 0.6, 0.8, 0.5, 0.9, 0.4, 0.7, 0.6, 0.5],
-    '6M': [0.6, 0.7, 0.4, 0.8, 0.5, 0.6, 0.7, 0.8, 0.4, 0.9, 0.5],
-    '1Y': [0.7, 0.5, 0.8, 0.6, 0.4, 0.7, 0.5, 0.6, 0.8, 0.7, 0.9],
-    'All': [0.8, 0.6, 0.5, 0.7, 0.9, 0.4, 0.8, 0.5, 0.6, 0.7, 0.8],
+    '1M': [],
+    '3M': [],
+    '6M': [],
+    '1Y': [],
+    'All': [],
   },
+  isLoadingPlaidData: false,
+  plaidError: null,
+  assetHistory: [],
+  lastRecordedTime: null,
+  
+  // Simple Setters
   toggleAiOptIn: () => set((state) => ({ isAiOptedIn: !state.isAiOptedIn })),
   setAccounts: (accounts) => set({ accounts }),
   setTransactions: (transactions) => set({ transactions }),
   setInvestmentAccounts: (investmentAccounts) => set({ investmentAccounts }),
   setInvestments: (investments) => set({ investments }),
   setSelectedTimeRange: (timeRange) => set({ selectedTimeRange: timeRange }),
-  hydratePlaidFinanceData: async () => {
-    set({
-      accounts: mockFinanceSnapshot.accounts,
-      transactions: mockFinanceSnapshot.transactions,
-      investmentAccounts: mockFinanceSnapshot.investmentAccounts,
-      investments: mockFinanceSnapshot.investments,
-    });
+  
+  // Plaid Data Hydration
+  hydratePlaidFinanceData: async (token: string) => {
+    try {
+      set({ isLoadingPlaidData: true, plaidError: null });
+      Logger.debug('FinanceStore', 'Fetching Plaid finance snapshot');
+      
+      const snapshot = await fetchPlaidFinanceSnapshot(token);
+      Logger.info('FinanceStore', 'Plaid snapshot fetched successfully', {
+        accountsCount: snapshot.accounts.length,
+        transactionsCount: snapshot.transactions.length,
+        investmentAccountsCount: snapshot.investmentAccounts.length,
+      });
+
+      set((state) => {
+        // Preserve Web3 Wallet accounts and investments (not managed by Plaid)
+        const walletAccounts = state.investmentAccounts.filter(
+          (account) => account.type === 'Web3 Wallet'
+        );
+        const walletInvestments = state.investments.filter((investment) =>
+          walletAccounts.some((account) => account.id === investment.accountId)
+        );
+
+        return {
+          accounts: snapshot.accounts,
+          transactions: snapshot.transactions,
+          investmentAccounts: [...snapshot.investmentAccounts, ...walletAccounts],
+          investments: [...snapshot.investments, ...walletInvestments],
+          isLoadingPlaidData: false,
+        };
+      });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch Plaid finance data';
+      Logger.error('FinanceStore', 'Failed to hydrate Plaid data', { error: errorMessage });
+      set({ isLoadingPlaidData: false, plaidError: errorMessage });
+      throw error;
+    }
   },
-  clearPlaidFinanceData: () =>
+  
+  clearPlaidFinanceData: () => {
+    Logger.info('FinanceStore', 'Clearing Plaid finance data');
     set({
       accounts: [],
       transactions: [],
       investmentAccounts: [],
       investments: [],
-    }),
-  disconnectBankingAccount: (accountId) => {
-    set((state) => ({
-      accounts: state.accounts.filter((account) => account.id !== accountId),
-      transactions: state.transactions.filter((transaction) => transaction.accountId !== accountId),
-    }));
+      plaidError: null,
+    });
   },
-  disconnectInvestmentAccount: (accountId) => {
+  
+  // Account Disconnect (with backend sync)
+  disconnectBankingAccount: async (accountId: string) => {
+    try {
+      Logger.debug('FinanceStore', 'Disconnecting banking account', { accountId });
+      
+      // Update UI immediately (optimistic update)
+      set((state) => ({
+        accounts: state.accounts.filter((account) => account.id !== accountId),
+        transactions: state.transactions.filter((transaction) => transaction.accountId !== accountId),
+      }));
+      
+      Logger.info('FinanceStore', 'Banking account disconnected locally');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to disconnect account';
+      Logger.error('FinanceStore', 'Failed to disconnect banking account', { error: errorMessage });
+      throw error;
+    }
+  },
+  
+  disconnectInvestmentAccount: (accountId: string) => {
+    Logger.debug('FinanceStore', 'Disconnecting investment account', { accountId });
     set((state) => ({
       investmentAccounts: state.investmentAccounts.filter((account) => account.id !== accountId),
       investments: state.investments.filter((investment) => investment.accountId !== accountId),
     }));
+    Logger.info('FinanceStore', 'Investment account disconnected');
   },
+  
+  // Update Account Order
+  updateAccountOrder: async (accountIds: string[], investmentAccountIds: string[]) => {
+    try {
+      Logger.debug('FinanceStore', 'Updating account order', { accountIds, investmentAccountIds });
+      
+      // Note: Backend sync should be called from parent component or useAppStore
+      // This just updates the UI state based on new order
+      set((state) => {
+        const orderedAccounts = accountIds
+          .map(id => state.accounts.find(a => a.id === id))
+          .filter((a) => a !== undefined) as Account[];
+        
+        const orderedInvestmentAccounts = investmentAccountIds
+          .map(id => state.investmentAccounts.find(a => a.id === id))
+          .filter((a) => a !== undefined) as InvestmentAccount[];
+        
+        return {
+          accounts: [...orderedAccounts, ...state.accounts.filter(a => !accountIds.includes(a.id))],
+          investmentAccounts: [...orderedInvestmentAccounts, ...state.investmentAccounts.filter(a => !investmentAccountIds.includes(a.id))],
+        };
+      });
+      
+      Logger.info('FinanceStore', 'Account order updated');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update account order';
+      Logger.error('FinanceStore', 'Failed to update account order', { error: errorMessage });
+      throw error;
+    }
+  },
+  
+  // Web3 Wallet Operations
   syncConnectedWalletPosition: async ({
     address,
     chainId,
@@ -288,6 +270,8 @@ export const useFinanceStore = create<FinanceState>((set) => ({
     const accountId = `wallet-${chainId}-${normalizedAddress}`;
     const assetId = `wallet-native-${chainId}-${normalizedAddress}`;
     const chainMeta = CHAIN_MARKET_META[chainId];
+
+    Logger.debug('FinanceStore', 'Syncing wallet position', { address: normalizedAddress, chainId });
 
     let currentPrice = 0;
     let change24h = 0;
@@ -303,8 +287,10 @@ export const useFinanceStore = create<FinanceState>((set) => ({
           const market = json[chainMeta.coingeckoId];
           currentPrice = market?.usd ?? 0;
           change24h = market?.usd_24h_change ?? 0;
+          Logger.debug('FinanceStore', 'Fetched market data', { currentPrice, change24h });
         }
-      } catch {
+      } catch (err) {
+        Logger.warn('FinanceStore', 'Failed to fetch market data', err);
         currentPrice = 0;
         change24h = 0;
       }
@@ -336,15 +322,119 @@ export const useFinanceStore = create<FinanceState>((set) => ({
       ],
       investments: [...state.investments.filter((investment) => investment.id !== assetId), walletAsset],
     }));
+    
+    Logger.info('FinanceStore', 'Wallet position synced', { address: normalizedAddress, balance: nativeBalance });
   },
+  
   removeConnectedWalletPosition: (address, chainId) => {
     const normalizedAddress = address.toLowerCase();
     const accountId = `wallet-${chainId}-${normalizedAddress}`;
     const assetId = `wallet-native-${chainId}-${normalizedAddress}`;
 
+    Logger.debug('FinanceStore', 'Removing wallet position', { address: normalizedAddress, chainId });
+
     set((state) => ({
       investmentAccounts: state.investmentAccounts.filter((account) => account.id !== accountId),
       investments: state.investments.filter((investment) => investment.id !== assetId),
     }));
+    
+    Logger.info('FinanceStore', 'Wallet position removed');
+  },
+  
+  // Asset History & Performance Tracking
+  calculateTotalAssets: () => {
+    const state = get();
+    
+    // 银行账户总余额
+    const bankingBalance = state.accounts.reduce((sum, account) => sum + account.balance, 0);
+    
+    // 投资总价值
+    const investmentValue = state.investments.reduce((sum, investment) => {
+      return sum + investment.holdings * investment.currentPrice;
+    }, 0);
+    
+    const totalAssets = bankingBalance + investmentValue;
+    
+    Logger.debug('FinanceStore', 'Total assets calculated', {
+      bankingBalance,
+      investmentValue,
+      totalAssets,
+    });
+    
+    return totalAssets;
+  },
+  
+  recordAssetSnapshot: () => {
+    const state = get();
+    const now = Date.now();
+    
+    // 检查是否距离上次记录已有足够的时间（至少 1 小时以避免过度记录）
+    if (state.lastRecordedTime && (now - state.lastRecordedTime) < 3600000) {
+      Logger.debug('FinanceStore', 'Skipping snapshot - recorded too recently', {
+        lastRecordedTime: state.lastRecordedTime,
+        now,
+      });
+      return;
+    }
+    
+    const totalAssets = get().calculateTotalAssets();
+    const bankingBalance = state.accounts.reduce((sum, account) => sum + account.balance, 0);
+    const investmentValue = state.investments.reduce((sum, investment) => {
+      return sum + investment.holdings * investment.currentPrice;
+    }, 0);
+    const cryptoValue = state.investmentAccounts
+      .filter((account) => account.type === 'Web3 Wallet')
+      .reduce((sum, account) => {
+        const investments = state.investments.filter((inv) => inv.accountId === account.id);
+        return sum + investments.reduce((invSum, inv) => invSum + inv.holdings * inv.currentPrice, 0);
+      }, 0);
+    
+    const snapshot: AssetSnapshot = {
+      timestamp: now,
+      totalAssets,
+      bankingBalance,
+      investmentValue,
+      cryptoValue,
+    };
+    
+    set((currentState) => {
+      // 保持最多 365 天的数据
+      const oneYearAgo = now - 365 * 24 * 3600 * 1000;
+      const filteredHistory = currentState.assetHistory.filter(
+        (snap) => snap.timestamp > oneYearAgo
+      );
+      
+      return {
+        assetHistory: [...filteredHistory, snapshot],
+        lastRecordedTime: now,
+      };
+    });
+    
+    Logger.info('FinanceStore', 'Asset snapshot recorded', {
+      timestamp: new Date(now).toISOString(),
+      totalAssets,
+      bankingBalance,
+      investmentValue,
+      cryptoValue,
+    });
+  },
+  
+  getAssetSnapshotsByTimeRange: (days: number) => {
+    const state = get();
+    const cutoffTime = Date.now() - days * 24 * 3600 * 1000;
+    
+    const snapshots = state.assetHistory.filter((snap) => snap.timestamp >= cutoffTime);
+    
+    Logger.debug('FinanceStore', 'Retrieved asset snapshots', {
+      requestedDays: days,
+      snapshotCount: snapshots.length,
+    });
+    
+    return snapshots;
+  },
+  
+  clearAssetHistory: () => {
+    Logger.info('FinanceStore', 'Clearing asset history');
+    set({ assetHistory: [], lastRecordedTime: null });
   },
 }));

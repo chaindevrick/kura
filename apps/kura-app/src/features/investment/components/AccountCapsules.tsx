@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, ScrollView, Image, TouchableOpacity, Text } from 'react-native';
+import { ScrollView, Image, TouchableOpacity, Text } from 'react-native';
 
 interface Account {
   id: string;
@@ -15,8 +15,6 @@ interface AccountCapsulesProps {
 }
 
 export default function AccountCapsules({ accounts, selectedAccountId, onSelectAccount, onAddAccount }: AccountCapsulesProps) {
-  if (accounts.length === 0) return null;
-
   return (
     <ScrollView
       horizontal

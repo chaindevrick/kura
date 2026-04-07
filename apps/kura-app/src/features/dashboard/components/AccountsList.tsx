@@ -29,16 +29,6 @@ export default function AccountsList({
   const scrollViewRef = useRef<ScrollView>(null);
   const [showConnectModal, setShowConnectModal] = useState(false);
 
-  const handleConnectPlaid = async () => {
-    console.log('Connect via Plaid');
-    // TODO: Implement Plaid connection logic
-  };
-
-  const handleConnectWalletConnect = async () => {
-    console.log('Connect via WalletConnect');
-    // TODO: Implement WalletConnect logic
-  };
-
   // 默认滚动到最底部
   useEffect(() => {
     setTimeout(() => {
@@ -113,7 +103,7 @@ export default function AccountsList({
             // 根据索引交替使用不同的颜色主题，和前端一样
             const accentColors = isSelected 
               ? (['#8B5CF6', '#6366F1'] as const)
-              : (index % 2 === 0 ? (['#0B0B0F', '#0B0B0F'] as const) : (['#1A1A24', '#1A1A24'] as const));
+              : (index % 2 === 0 ? (['#1A1A24', '#1A1A24'] as const) : (['#0B0B0F', '#0B0B0F'] as const));
 
             return (
               <TouchableOpacity
@@ -212,8 +202,6 @@ export default function AccountsList({
       <ConnectAccountModal
         isOpen={showConnectModal}
         onClose={() => setShowConnectModal(false)}
-        onSelectPlaid={handleConnectPlaid}
-        onSelectWalletConnect={handleConnectWalletConnect}
       />
     </>
   );

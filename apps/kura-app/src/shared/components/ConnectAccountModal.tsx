@@ -1,32 +1,36 @@
 import React, { useState } from 'react';
-import { Modal, View, Text, TouchableOpacity, ActivityIndicator, SafeAreaView, TouchableWithoutFeedback } from 'react-native';
+import { Modal, View, Text, TouchableOpacity, ActivityIndicator, TouchableWithoutFeedback } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useAppStore } from '../store/useAppStore';
 import WalletConnectModal from './WalletConnectModal';
+import PlaidLinkModal from './PlaidLinkModal';
 
 interface ConnectAccountModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSelectPlaid: () => void | Promise<void>;
-  onSelectWalletConnect: () => void | Promise<void>;
 }
 
 export default function ConnectAccountModal({
   isOpen,
   onClose,
-  onSelectPlaid,
-  onSelectWalletConnect,
 }: ConnectAccountModalProps) {
   const [isConnecting, setIsConnecting] = useState<'plaid' | 'walletconnect' | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showWalletConnectModal, setShowWalletConnectModal] = useState(false);
+  const [showPlaidModal, setShowPlaidModal] = useState(false);
+
+  const requestPlaidLinkToken = useAppStore((state: any) => state.requestPlaidLinkToken);
+  const plaidLinkToken = useAppStore((state: any) => state.plaidLinkToken);
 
   const handlePlaidPress = async () => {
     try {
       setIsConnecting('plaid');
       setError(null);
-      await onSelectPlaid();
+      // Request link token and show modal
+      await requestPlaidLinkToken();
+      setShowPlaidModal(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to connect Plaid account');
+      setError(err instanceof Error ? err.message : 'Failed to initialize Plaid');
     } finally {
       setIsConnecting(null);
     }
@@ -34,10 +38,12 @@ export default function ConnectAccountModal({
 
   const handleWalletConnectPress = async () => {
     try {
+      console.log('[WalletConnect] Button pressed, opening modal...');
       setError(null);
       // Show the WalletConnectModal instead of calling external callback
       setShowWalletConnectModal(true);
     } catch (err) {
+      console.log('[WalletConnect] Error:', err);
       setError(err instanceof Error ? err.message : 'Failed to connect wallet');
     }
   };
@@ -51,6 +57,17 @@ export default function ConnectAccountModal({
   const handleWalletConnectModalClose = () => {
     setShowWalletConnectModal(false);
     onClose();
+  };
+
+  const handlePlaidModalClose = () => {
+    setShowPlaidModal(false);
+    setIsConnecting(null);
+  };
+
+  const handlePlaidModalSuccess = () => {
+    setShowPlaidModal(false);
+    setIsConnecting(null);
+    handleClose();
   };
 
   return (
@@ -170,8 +187,8 @@ export default function ConnectAccountModal({
                 padding: 16,
                 borderRadius: 16,
                 borderWidth: 1,
-                borderColor: isConnecting === 'walletconnect' ? 'rgba(59, 130, 246, 0.5)' : 'rgba(255, 255, 255, 0.05)',
-                backgroundColor: isConnecting === 'walletconnect' ? 'rgba(59, 130, 246, 0.1)' : '#1A1A24',
+                borderColor: 'rgba(255, 255, 255, 0.05)',
+                backgroundColor: '#1A1A24',
                 flexDirection: 'row',
                 alignItems: 'center',
                 gap: 16,
@@ -198,11 +215,7 @@ export default function ConnectAccountModal({
               </View>
 
               {/* Spinner or Arrow */}
-              {isConnecting === 'walletconnect' ? (
-                <ActivityIndicator color="#3B82F6" size="small" />
-              ) : (
-                <Ionicons name="chevron-forward" size={20} color="#3B82F6" />
-              )}
+              <Ionicons name="chevron-forward" size={20} color="#3B82F6" />
             </TouchableOpacity>
           </View>
         </View>
@@ -215,6 +228,14 @@ export default function ConnectAccountModal({
       <WalletConnectModal
         isOpen={showWalletConnectModal}
         onClose={handleWalletConnectModalClose}
+      />
+
+      {/* Plaid Link Modal */}
+      <PlaidLinkModal
+        isVisible={showPlaidModal}
+        linkToken={plaidLinkToken}
+        onClose={handlePlaidModalClose}
+        onSuccess={handlePlaidModalSuccess}
       />
     </>
   );

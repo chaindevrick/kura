@@ -1,7 +1,7 @@
 // apps/kura-app/src/features/settings/screens/UserSettingsModal.tsx
 import React, { useEffect, useState } from 'react';
 import { View, Modal, Dimensions, TouchableWithoutFeedback, ScrollView, TouchableOpacity, Text } from 'react-native';
-import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming, runOnJS } from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, runOnJS } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppStore } from '../../../shared/store/useAppStore';
 import UserProfile from '../components/UserProfile';
@@ -38,7 +38,7 @@ export default function UserSettingsModal({ isVisible, onClose }: UserSettingsMo
     } else {
       animationProgress.value = withTiming(0, { duration: 300 });
     }
-  }, [isVisible]);
+  }, [isVisible, animationProgress]);
 
   const backdropStyle = useAnimatedStyle(() => ({
     opacity: animationProgress.value,

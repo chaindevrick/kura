@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, Modal, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
+import { View, Text, Modal, TouchableOpacity, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import type { Transaction, Account } from '../../../shared/store/useFinanceStore';
+import type { Transaction } from '../../../shared/store/useFinanceStore';
 
 interface TransactionsDetailModalProps {
   isOpen: boolean;

@@ -40,18 +40,18 @@ export default function ConnectedAccountsScreen({ onClose }: ConnectedAccountsSc
   const investmentAccounts = useFinanceStore((state) => state.investmentAccounts);
 
   const handleDisconnect = (accountId: string) => {
-    // 这里可以调用 mutation 来移除账户
+    // 這裡可以調用 mutation 來移除賬戶
     console.log('Disconnect account:', accountId);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleConnectPlaid = async () => {
-    console.log('Connect via Plaid');
-    // TODO: Implement Plaid connection logic
+    setShowConnectModal(true);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleConnectWalletConnect = async () => {
-    console.log('Connect via WalletConnect');
-    // TODO: Implement WalletConnect logic
+    setShowConnectModal(true);
   };
 
   // 合并所有账户（银行账户 + 投资账户）
@@ -142,8 +142,6 @@ export default function ConnectedAccountsScreen({ onClose }: ConnectedAccountsSc
         <ConnectAccountModal
           isOpen={showConnectModal}
           onClose={() => setShowConnectModal(false)}
-          onSelectPlaid={handleConnectPlaid}
-          onSelectWalletConnect={handleConnectWalletConnect}
         />
       </ScrollView>
     </View>

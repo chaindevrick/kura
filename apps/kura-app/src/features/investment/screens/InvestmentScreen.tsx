@@ -15,10 +15,6 @@ export default function InvestmentScreen() {
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
   const [showConnectModal, setShowConnectModal] = useState(false);
 
-  const totalValue = useMemo(() => {
-    return investments.reduce((sum, investment) => sum + investment.holdings * investment.currentPrice, 0);
-  }, [investments]);
-
   const displayedInvestments = useMemo(() => {
     if (selectedAccountId) {
       return investments.filter((investment) => investment.accountId === selectedAccountId);
@@ -30,20 +26,10 @@ export default function InvestmentScreen() {
     setShowConnectModal(true);
   };
 
-  const handleConnectPlaid = async () => {
-    console.log('Connect via Plaid');
-    // TODO: Implement Plaid connection logic
-  };
-
-  const handleConnectWalletConnect = async () => {
-    console.log('Connect via WalletConnect');
-    // TODO: Implement WalletConnect logic
-  };
-
   return (
     <View style={{ flex: 1, backgroundColor: '#0B0B0F' }}>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 32 }} showsVerticalScrollIndicator={false}>
-        <PerformanceSummary totalValue={totalValue} />
+        <PerformanceSummary timeRange={selectedTimeRange as any} />
         <WaveChart selectedTimeRange={selectedTimeRange} onTimeRangeChange={setSelectedTimeRange} />
         <AccountCapsules 
           accounts={investmentAccounts} 
@@ -61,8 +47,6 @@ export default function InvestmentScreen() {
       <ConnectAccountModal
         isOpen={showConnectModal}
         onClose={() => setShowConnectModal(false)}
-        onSelectPlaid={handleConnectPlaid}
-        onSelectWalletConnect={handleConnectWalletConnect}
       />
     </View>
   );

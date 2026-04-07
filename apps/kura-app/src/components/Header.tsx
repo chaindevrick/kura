@@ -1,27 +1,51 @@
 // apps/kura-app/src/features/header/components/Header.tsx
-import React, { useState } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import UserSettingsModal from '../features/settings/screens/UserSettingsModal';
+import LoggerDebugPanel from '../shared/components/LoggerDebugPanel';
 import { useAppStore } from '../shared/store/useAppStore';
 
 export default function Header() {
   const [isModalVisible, setModalVisible] = useState(false);
+  const [isLoggerVisible, setIsLoggerVisible] = useState(false);
+  const logoClickCount = useRef(0);
+  const logoClickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const userProfile = useAppStore((state) => state.userProfile);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
-  const displayName = userProfile.displayName.trim();
-  const avatarInitial = displayName ? displayName.slice(0, 1).toUpperCase() : '?';
+
+  // 缓存计算的值，避免每次渲染都重新计算
+  const { avatarInitial } = useMemo(() => {
+    const trimmedName = userProfile.displayName.trim();
+    return {
+      avatarInitial: trimmedName ? trimmedName.slice(0, 1).toUpperCase() : '?',
+    };
+  }, [userProfile.displayName]);
 
   const handleLogoPress = () => {
-    // 回到首頁（返回）
-    if (navigation.canGoBack?.()) {
-      navigation.goBack();
-    } else {
-      navigation.navigate('Banking');
+    logoClickCount.current += 1;
+
+    // 如果已有定时器，清除它
+    if (logoClickTimer.current) {
+      clearTimeout(logoClickTimer.current);
     }
+
+    // 如果连续按5次，打开日志面板
+    if (logoClickCount.current === 5) {
+      setIsLoggerVisible(true);
+      logoClickCount.current = 0;
+      return;
+    }
+
+    // 5秒后重置计数
+    logoClickTimer.current = setTimeout(() => {
+      logoClickCount.current = 0;
+      logoClickTimer.current = null;
+    }, 5000);
   };
 
   return (
@@ -54,6 +78,11 @@ export default function Header() {
       <UserSettingsModal 
         isVisible={isModalVisible} 
         onClose={() => setModalVisible(false)} 
+      />
+
+      <LoggerDebugPanel 
+        isVisible={isLoggerVisible}
+        onClose={() => setIsLoggerVisible(false)}
       />
     </View>
   );
