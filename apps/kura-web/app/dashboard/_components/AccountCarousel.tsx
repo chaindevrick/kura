@@ -88,7 +88,7 @@ export default function AccountCarousel({
               {formattedTotal}
             </div>
             <div className={`font-medium ${selectedId === 'all' ? 'text-white/90' : 'text-gray-400'}`}>
-              Net Net Worth
+              Net Worth
             </div>
           </div>
         </div>
@@ -120,7 +120,7 @@ export default function AccountCarousel({
           }
 
           const stackLevel = activeCardId === account.id ? baseTopZIndex + 2 : orderedAccounts.length - index + 1;
-          const defaultBg = index % 2 === 0 ? 'bg-[#1A1A24]' : 'bg-[#0B0B0F] border border-white/10';
+          const defaultBg = index % 2 === 0 ? 'bg-[#0B0B0F]' : 'bg-[#1A1A24] border border-white/10';
 
           return (
             <Reorder.Item
