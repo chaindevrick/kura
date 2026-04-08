@@ -110,9 +110,7 @@ We may update this Privacy Policy from time to time to reflect changes in our pr
 
 If you have questions, concerns, or requests regarding this Privacy Policy or our privacy practices, please contact us at:
 
-**Email**: privacy@example.com  
-**Mailing Address**: [Your Company Address]  
-**Data Protection Officer**: [Contact Information]
+**Email**: chain.dev.rick@proton.me
 
 ---
 
