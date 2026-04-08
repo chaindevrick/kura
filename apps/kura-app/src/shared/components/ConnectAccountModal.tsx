@@ -174,6 +174,7 @@ export default function ConnectAccountModal({
                       borderColor: 'rgba(255, 255, 255, 0.05)',
                       backgroundColor: '#1A1A24',
                       gap: 8,
+                      opacity: 0.5,
                     }}
                   >
                     {/* Header */}
@@ -192,13 +193,18 @@ export default function ConnectAccountModal({
                       </View>
 
                       <View style={{ flex: 1 }}>
-                        <Text style={{ fontSize: 16, fontWeight: '600', color: '#3B82F6', marginBottom: 4 }}>Reown AppKit</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                          <Text style={{ fontSize: 16, fontWeight: '600', color: '#3B82F6', marginBottom: 4 }}>Reown AppKit</Text>
+                          <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4, backgroundColor: 'rgba(107, 114, 128, 0.3)', borderWidth: 1, borderColor: 'rgba(107, 114, 128, 0.5)' }}>
+                            <Text style={{ fontSize: 10, color: '#9CA3AF', fontWeight: '600' }}>Unavailable</Text>
+                          </View>
+                        </View>
                         <Text style={{ fontSize: 12, color: '#9CA3AF', lineHeight: 16 }}>Connect Web3 wallets</Text>
                       </View>
                     </View>
 
                     {/* Button */}
-                    <AppKitWalletButton onConnected={handleWalletConnected} />
+                    <AppKitWalletButton onConnected={handleWalletConnected} disabled={true} />
                   </View>
                 </View>
               </View>

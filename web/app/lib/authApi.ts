@@ -39,7 +39,8 @@ export class AuthApiError extends Error {
 }
 
 export const getBackendBaseUrl = (): string => {
-  return process.env.NEXT_PUBLIC_BACKEND_URL || DEFAULT_BACKEND_URL;
+  // 总是使用生産URL，确保不会被错误的环境变量覆盖
+  return DEFAULT_BACKEND_URL;
 };
 
 export const getStoredAuthToken = (): string | null => {
@@ -85,6 +86,14 @@ async function apiRequest<T>(
       headers,
     });
 
+    console.log('[AuthAPI] Response received:', {
+      status: response.status,
+      statusText: response.statusText,
+      headers: {
+        contentType: response.headers.get('content-type'),
+      },
+    });
+
     const raw = await response.text();
     let json: (ApiErrorBody & T) | null = null;
     if (raw) {
@@ -104,12 +113,44 @@ async function apiRequest<T>(
     console.log('[AuthAPI] Request successful', { response: json });
     return (json as T) ?? ({} as T);
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('[AuthAPI] Request failed:', {
+    let errorMessage = 'Unknown error';
+    let errorStack: string | undefined = undefined;
+    let isNetworkError = false;
+    
+    if (error instanceof Error) {
+      errorMessage = error.message;
+      errorStack = error.stack;
+      
+      // 检测 CORS 和网络错误
+      if (errorMessage.includes('Failed to fetch') || errorMessage.includes('Load failed')) {
+        isNetworkError = true;
+        const hint = 'Could be network error, CORS issue, or backend service unreachable';
+        errorMessage = `${errorMessage} (${hint})`;
+      }
+    } else if (error instanceof AuthApiError) {
+      errorMessage = error.message;
+      errorStack = error.stack;
+    } else if (typeof error === 'string') {
+      errorMessage = error;
+    } else {
+      errorMessage = String(error);
+    }
+    
+    const errorLog: { url: string; error: string; stack?: string; isNetworkError?: boolean } = {
       url,
       error: errorMessage,
-      stack: error instanceof Error ? error.stack : undefined,
-    });
+    };
+    
+    if (isNetworkError) {
+      errorLog.isNetworkError = true;
+    }
+    
+    // 只在有 stack 时才包含
+    if (errorStack) {
+      errorLog.stack = errorStack;
+    }
+    
+    console.error('[AuthAPI] Request failed:', errorLog);
     throw error;
   }
 }

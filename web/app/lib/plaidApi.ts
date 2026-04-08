@@ -99,6 +99,14 @@ async function plaidRequest<T>(
       headers,
     });
 
+    console.debug('[PlaidAPI] Response received:', {
+      status: response.status,
+      statusText: response.statusText,
+      headers: {
+        contentType: response.headers.get('content-type'),
+      },
+    });
+
     const raw = await response.text();
     let json: (ApiErrorBody & T) | null = null;
     if (raw) {
@@ -118,7 +126,44 @@ async function plaidRequest<T>(
     console.debug('[PlaidAPI] Response successful', { status: response.status });
     return (json as T) ?? ({} as T);
   } catch (error) {
-    console.error('[PlaidAPI] Request failed', error);
+    let errorMessage = 'Unknown error';
+    let errorStack: string | undefined = undefined;
+    let isNetworkError = false;
+    
+    if (error instanceof Error) {
+      errorMessage = error.message;
+      errorStack = error.stack;
+      
+      // 检测 CORS 和网络错误
+      if (errorMessage.includes('Failed to fetch') || errorMessage.includes('Load failed')) {
+        isNetworkError = true;
+        const hint = 'Could be network error, CORS issue, or backend service unreachable';
+        errorMessage = `${errorMessage} (${hint})`;
+      }
+    } else if (error instanceof PlaidApiError) {
+      errorMessage = error.message;
+      errorStack = error.stack;
+    } else if (typeof error === 'string') {
+      errorMessage = error;
+    } else {
+      errorMessage = String(error);
+    }
+    
+    const errorLog: { url: string; error: string; stack?: string; isNetworkError?: boolean } = {
+      url,
+      error: errorMessage,
+    };
+    
+    if (isNetworkError) {
+      errorLog.isNetworkError = true;
+    }
+    
+    // 只在有 stack 时才包含
+    if (errorStack) {
+      errorLog.stack = errorStack;
+    }
+    
+    console.error('[PlaidAPI] Request failed:', errorLog);
     throw error;
   }
 }

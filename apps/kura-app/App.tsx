@@ -4,9 +4,7 @@ import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { AppKitProvider } from '@reown/appkit-react-native';
 import { useAppStore } from './src/shared/store/useAppStore';
-import { appKit } from './src/shared/config/AppKitConfig';
 import Logger from './src/shared/utils/Logger';
 import { getBackendBaseUrl } from './src/shared/api/authApi';
 import Header from './src/components/Header';
@@ -127,15 +125,13 @@ export default function App() {
   return (
     // SafeAreaProvider 確保在有瀏海或動態島的 iPhone 上，UI 不會被切到
     <SafeAreaProvider>
-      <AppKitProvider instance={appKit}>
-        {/* NavigationContainer 是所有路由的總司令部 */}
-        <NavigationContainer theme={KuraDarkTheme}>
-          {/* 確保手機頂部的時間、電量等狀態列圖示是白色的 (Light Content) */}
-          <StatusBar style="light" translucent={true} />
+      {/* NavigationContainer 是所有路由的總司令部 */}
+      <NavigationContainer theme={KuraDarkTheme}>
+        {/* 確保手機頂部的時間、電量等狀態列圖示是白色的 (Light Content) */}
+        <StatusBar style="light" translucent={true} />
 
-          {authStatus === 'authenticated' ? <MainNavigator /> : <AuthNavigator />}
-        </NavigationContainer>
-      </AppKitProvider>
+        {authStatus === 'authenticated' ? <MainNavigator /> : <AuthNavigator />}
+      </NavigationContainer>
     </SafeAreaProvider>
   );
 }
