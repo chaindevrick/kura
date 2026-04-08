@@ -4,6 +4,7 @@
  */
 
 import { getBackendBaseUrl } from './authApi';
+import { handleFetchError, handleResponseError, logResponse, logSuccess, extractErrorMessage } from './errorHandler';
 
 export interface BackendFinanceAccount {
   id: string;
@@ -99,13 +100,7 @@ async function plaidRequest<T>(
       headers,
     });
 
-    console.debug('[PlaidAPI] Response received:', {
-      status: response.status,
-      statusText: response.statusText,
-      headers: {
-        contentType: response.headers.get('content-type'),
-      },
-    });
+    logResponse(response.status, response.statusText, response.headers.get('content-type'), url, 'PlaidAPI');
 
     const raw = await response.text();
     let json: (ApiErrorBody & T) | null = null;
@@ -118,53 +113,22 @@ async function plaidRequest<T>(
     }
 
     if (!response.ok) {
-      const message = json?.error || json?.message || `Request failed with status ${response.status}`;
-      console.error('[PlaidAPI] Response error', { message, status: response.status });
-      throw new PlaidApiError(message, response.status);
+      const { error, message } = extractErrorMessage(json);
+      const errorMsg = error || message || `Request failed with status ${response.status}`;
+      const { error: apiError } = handleResponseError(response.status, errorMsg, url, 'PlaidAPI');
+      throw apiError;
     }
 
-    console.debug('[PlaidAPI] Response successful', { status: response.status });
+    logSuccess(json, url, 'PlaidAPI');
     return (json as T) ?? ({} as T);
   } catch (error) {
-    let errorMessage = 'Unknown error';
-    let errorStack: string | undefined = undefined;
-    let isNetworkError = false;
-    
-    if (error instanceof Error) {
-      errorMessage = error.message;
-      errorStack = error.stack;
-      
-      // 检测 CORS 和网络错误
-      if (errorMessage.includes('Failed to fetch') || errorMessage.includes('Load failed')) {
-        isNetworkError = true;
-        const hint = 'Could be network error, CORS issue, or backend service unreachable';
-        errorMessage = `${errorMessage} (${hint})`;
-      }
-    } else if (error instanceof PlaidApiError) {
-      errorMessage = error.message;
-      errorStack = error.stack;
-    } else if (typeof error === 'string') {
-      errorMessage = error;
-    } else {
-      errorMessage = String(error);
+    // 如果已经是 PlaidApiError，直接抛出
+    if (error instanceof PlaidApiError) {
+      throw error;
     }
     
-    const errorLog: { url: string; error: string; stack?: string; isNetworkError?: boolean } = {
-      url,
-      error: errorMessage,
-    };
-    
-    if (isNetworkError) {
-      errorLog.isNetworkError = true;
-    }
-    
-    // 只在有 stack 时才包含
-    if (errorStack) {
-      errorLog.stack = errorStack;
-    }
-    
-    console.error('[PlaidAPI] Request failed:', errorLog);
-    throw error;
+    const { error: apiError } = handleFetchError(error, url, 'PlaidAPI');
+    throw apiError;
   }
 }
 

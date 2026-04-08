@@ -1,0 +1,47 @@
+# Build artifacts
+.next
+dist
+build
+.swc
+
+# Node
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Version control
+.git
+.gitignore
+.github
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Runtime
+.firebase
+firebase-debug.log
+certificates
+
+# Documentation
+README.md
+*.md
+
+# Scripts
+scripts/
+
+# Other
+.eslintignore
+eslint.config.mjs
+postcss.config.mjs
+tsconfig.json
+tailwind.config.ts

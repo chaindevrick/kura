@@ -92,6 +92,10 @@ interface FinanceState {
   disconnectInvestmentAccount: (accountId: string) => void;
   updateAccountOrder: (accountIds: string[], investmentAccountIds: string[]) => Promise<void>;
   
+  // Web3 Wallet Operations
+  syncConnectedWalletPosition: (payload: SyncWalletPayload) => Promise<void>;
+  removeConnectedWalletPosition: (address: string, chainId: number) => void;
+  
   // Asset History Operations (for performance tracking)
   recordAssetSnapshot: () => void;
   getAssetSnapshotsByTimeRange: (days: number) => AssetSnapshot[];

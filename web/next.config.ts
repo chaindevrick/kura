@@ -2,7 +2,14 @@ import type { NextConfig } from "next";
 import path from "path";
 
 const nextConfig: NextConfig = {
+  // ✅ Standalone output: Create a self-contained build without node_modules
+  // Perfect for Docker/Cloud Run deployment
+  output: 'standalone',
+  
   /* config options here */
+  // ✅ HTTPS handling:
+  // - Development: npm run dev uses --experimental-https flag (see package.json)
+  // - Production: Firebase Hosting provides HTTPS (app runs on HTTP)
   turbopack: {
     root: path.join(__dirname),
   },

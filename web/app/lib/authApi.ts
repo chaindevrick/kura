@@ -3,6 +3,8 @@
  * 对齐 kura-app 实现
  */
 
+import { handleFetchError, handleResponseError, logResponse, logSuccess, extractErrorMessage } from './errorHandler';
+
 // Default backend URL - production environment
 const DEFAULT_BACKEND_URL = 'https://kura-backend-642134687769.us-central1.run.app';
 const AUTH_TOKEN_KEY = 'kura.auth.token';
@@ -86,13 +88,7 @@ async function apiRequest<T>(
       headers,
     });
 
-    console.log('[AuthAPI] Response received:', {
-      status: response.status,
-      statusText: response.statusText,
-      headers: {
-        contentType: response.headers.get('content-type'),
-      },
-    });
+    logResponse(response.status, response.statusText, response.headers.get('content-type'), url, 'AuthAPI');
 
     const raw = await response.text();
     let json: (ApiErrorBody & T) | null = null;
@@ -105,53 +101,22 @@ async function apiRequest<T>(
     }
 
     if (!response.ok) {
-      const message = json?.error || json?.message || `Request failed with status ${response.status}`;
-      console.error('[AuthAPI] Response error:', { status: response.status, message });
-      throw new AuthApiError(message, response.status);
+      const { error, message } = extractErrorMessage(json);
+      const errorMsg = error || message || `Request failed with status ${response.status}`;
+      const { error: apiError } = handleResponseError(response.status, errorMsg, url, 'AuthAPI');
+      throw apiError;
     }
 
-    console.log('[AuthAPI] Request successful', { response: json });
+    logSuccess(json, url, 'AuthAPI');
     return (json as T) ?? ({} as T);
   } catch (error) {
-    let errorMessage = 'Unknown error';
-    let errorStack: string | undefined = undefined;
-    let isNetworkError = false;
-    
-    if (error instanceof Error) {
-      errorMessage = error.message;
-      errorStack = error.stack;
-      
-      // 检测 CORS 和网络错误
-      if (errorMessage.includes('Failed to fetch') || errorMessage.includes('Load failed')) {
-        isNetworkError = true;
-        const hint = 'Could be network error, CORS issue, or backend service unreachable';
-        errorMessage = `${errorMessage} (${hint})`;
-      }
-    } else if (error instanceof AuthApiError) {
-      errorMessage = error.message;
-      errorStack = error.stack;
-    } else if (typeof error === 'string') {
-      errorMessage = error;
-    } else {
-      errorMessage = String(error);
+    // 如果已经是 ApiError，直接抛出
+    if (error instanceof AuthApiError) {
+      throw error;
     }
     
-    const errorLog: { url: string; error: string; stack?: string; isNetworkError?: boolean } = {
-      url,
-      error: errorMessage,
-    };
-    
-    if (isNetworkError) {
-      errorLog.isNetworkError = true;
-    }
-    
-    // 只在有 stack 时才包含
-    if (errorStack) {
-      errorLog.stack = errorStack;
-    }
-    
-    console.error('[AuthAPI] Request failed:', errorLog);
-    throw error;
+    const { error: apiError } = handleFetchError(error, url, 'AuthAPI');
+    throw apiError;
   }
 }
 
