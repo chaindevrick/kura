@@ -40,9 +40,4 @@ jest.config.js
 # Other
 .firebase
 firebase-debug.log
-firebase.json
-.eslintignore
-eslint.config.mjs
-postcss.config.mjs
-tailwind.config.ts
 certificates/
