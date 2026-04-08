@@ -10,10 +10,10 @@ import { useFinanceStore } from '@/store/useFinanceStore';
 import { useConnect } from 'wagmi';
 import { usePlaidLink, type PlaidLinkOnSuccessMetadata } from 'react-plaid-link';
 import {
-  BackendApiError,
+  PlaidApiError,
   createPlaidLinkToken,
   exchangePlaidPublicToken,
-} from '@/lib/backendApi';
+} from '@/lib/plaidApi';
 
 interface ConnectAccountModalProps {
   isOpen: boolean;
@@ -45,7 +45,7 @@ export default function ConnectAccountModal({ isOpen, onClose }: ConnectAccountM
         setPlaidLinkToken(result.link_token);
       } catch (error) {
         const message =
-          error instanceof BackendApiError ? error.message : 'Failed to get Plaid link token.';
+          error instanceof PlaidApiError ? error.message : 'Failed to get Plaid link token.';
         setPlaidError(message);
       }
     },
@@ -78,7 +78,7 @@ export default function ConnectAccountModal({ isOpen, onClose }: ConnectAccountM
         onClose();
       } catch (error) {
         const message =
-          error instanceof BackendApiError ? error.message : 'Failed to exchange Plaid token.';
+          error instanceof PlaidApiError ? error.message : 'Failed to exchange Plaid token.';
         setPlaidError(message);
       } finally {
         setIsExchangingToken(false);

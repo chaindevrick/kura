@@ -9,6 +9,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  Clipboard,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -37,6 +38,18 @@ export default function ConfirmSignupScreen({
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const confirmRegister = useAppStore((state) => state.confirmRegister);
+
+  const handlePasteCode = async () => {
+    try {
+      const text = await Clipboard.getString();
+      if (text) {
+        setVerificationCode(text.trim());
+        Logger.debug('ConfirmSignupScreen', 'Code pasted from clipboard');
+      }
+    } catch (err) {
+      Logger.error('ConfirmSignupScreen', 'Failed to paste code', err);
+    }
+  };
 
   const handleConfirmSignup = async () => {
     try {
@@ -129,9 +142,17 @@ export default function ConfirmSignupScreen({
 
             {/* Verification Code Input */}
             <View style={{ marginBottom: 20 }}>
-              <Text style={{ fontSize: 12, color: '#CCCCCC', fontWeight: '600', marginBottom: 8 }}>
-                Verification Code
-              </Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <Text style={{ fontSize: 12, color: '#CCCCCC', fontWeight: '600' }}>
+                  Verification Code
+                </Text>
+                <TouchableOpacity onPress={handlePasteCode} disabled={isLoading}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                    <Ionicons name="clipboard-outline" size={14} color="#8B5CF6" />
+                    <Text style={{ fontSize: 11, color: '#8B5CF6', fontWeight: '600' }}>Paste</Text>
+                  </View>
+                </TouchableOpacity>
+              </View>
               <View
                 style={{
                   borderWidth: 1,
@@ -152,6 +173,7 @@ export default function ConfirmSignupScreen({
                   onChangeText={setVerificationCode}
                   autoCapitalize="none"
                   editable={!isLoading}
+                  selectTextOnFocus={true}
                   style={{
                     flex: 1,
                     color: '#FFFFFF',

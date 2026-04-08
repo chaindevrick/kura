@@ -8,7 +8,7 @@ import AccountCarousel from './_components/AccountCarousel';
 import TransactionsModal from './_components/TransactionsModal';
 import { useFinanceStore } from '../store/useFinanceStore';
 import { useAppStore } from '@/store/useAppStore';
-import { updatePlaidAccountOrder } from '../lib/backendApi';
+import { updatePlaidAccountOrder } from '@/lib/plaidApi';
 
 const ConnectAccountModal = dynamic(() => import('@/components/ConnectAccountModal'), {
   ssr: false,

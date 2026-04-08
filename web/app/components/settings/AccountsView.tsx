@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, Variants } from 'framer-motion';
-import { BackendApiError, disconnectPlaidAccount as disconnectPlaidAccountApi } from '@/lib/backendApi';
+import { PlaidApiError, disconnectPlaidAccount as disconnectPlaidAccountApi } from '@/lib/plaidApi';
 import { useFinanceStore } from '../../store/useFinanceStore';
 import { useAppStore } from '@/store/useAppStore';
 import { useAccount, useChainId, useDisconnect } from 'wagmi';
@@ -51,7 +51,7 @@ export default function AccountsView({ variants, onConnectAccount }: AccountsVie
 
   const disconnectPlaidViaApi = async (accountId: string) => {
     if (!authToken) {
-      throw new BackendApiError('Please sign in to disconnect this account.', 401);
+      throw new PlaidApiError('Please sign in to disconnect this account.', 401);
     }
 
     await disconnectPlaidAccountApi(authToken, accountId);
@@ -64,7 +64,7 @@ export default function AccountsView({ variants, onConnectAccount }: AccountsVie
     try {
       await disconnectPlaidViaApi(accountId);
     } catch (error) {
-      const message = error instanceof BackendApiError ? error.message : 'Failed to disconnect account.';
+      const message = error instanceof PlaidApiError ? error.message : 'Failed to disconnect account.';
       alert(message);
     } finally {
       setDisconnectingId(null);
@@ -90,7 +90,7 @@ export default function AccountsView({ variants, onConnectAccount }: AccountsVie
 
       await disconnectPlaidViaApi(accountId);
     } catch (error) {
-      const message = error instanceof BackendApiError ? error.message : 'Failed to disconnect account.';
+      const message = error instanceof PlaidApiError ? error.message : 'Failed to disconnect account.';
       alert(message);
     } finally {
       setDisconnectingId(null);

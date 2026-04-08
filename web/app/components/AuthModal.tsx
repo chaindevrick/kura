@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAppStore } from '@/store/useAppStore';
-import { BackendApiError, loginUser, registerUser } from '@/lib/backendApi';
+import { AuthApiError, loginUser, registerUser } from '@/lib/authApi';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -52,7 +52,7 @@ export default function AuthModal({ isOpen, onClose, onAuthenticated }: AuthModa
       onAuthenticated?.();
       onClose();
     } catch (error) {
-      const message = error instanceof BackendApiError ? error.message : 'Authentication failed.';
+      const message = error instanceof AuthApiError ? error.message : 'Authentication failed.';
       setAuthError(message);
     } finally {
       setIsAuthenticating(false);

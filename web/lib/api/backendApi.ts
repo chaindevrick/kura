@@ -1,5 +1,5 @@
 const DEFAULT_BACKEND_URL =
-  process.env.NODE_ENV === 'production' ? 'http://localhost:8080' : 'https://localhost:8080';
+  process.env.NODE_ENV === 'production' ? 'https://kura-backend-642134687769.us-central1.run.app' : 'https://localhost:8080';
 const AUTH_TOKEN_KEY = 'kura.auth.token';
 
 export interface BackendUser {
