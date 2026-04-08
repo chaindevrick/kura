@@ -43,8 +43,11 @@ export default function PlaidLinkModal({
       return;
     }
 
+    let isMounted = true;
+
     const openPlaidLinkFlow = async () => {
       try {
+        if (!isMounted) return;
         setIsLoading(true);
         setError(null);
 
@@ -65,12 +68,16 @@ export default function PlaidLinkModal({
           throw createErr;
         }
 
+        if (!isMounted) return;
+
         Logger.debug('PlaidLinkModal', 'Opening Plaid Link UI with callbacks');
 
         // Step 2: Open Plaid Link with callbacks
         try {
           open({
             onSuccess: (linkSuccess: any) => {
+              if (!isMounted) return;
+
               Logger.info('PlaidLinkModal', 'Plaid Link success', {
                 publicToken: linkSuccess?.publicToken?.substring(0, 20) + '...',
                 institution: linkSuccess?.metadata?.institution?.name,
@@ -81,18 +88,28 @@ export default function PlaidLinkModal({
                   linkSuccess.publicToken,
                   linkSuccess.metadata?.institution?.name
                 ).then(() => {
+                  if (!isMounted) return;
                   Logger.info('PlaidLinkModal', 'Account connected successfully');
+                  setIsLoading(false);
                   onSuccess?.();
                   onClose();
                 }).catch((err: any) => {
+                  if (!isMounted) return;
                   const errorMessage = err instanceof Error ? err.message : 'Failed to connect account';
                   setError(errorMessage);
                   Logger.error('PlaidLinkModal', 'Exchange failed after Plaid success', { error: errorMessage });
                   setIsLoading(false);
                 });
+              } else {
+                if (!isMounted) return;
+                setError('Failed to retrieve public token from Plaid');
+                setIsLoading(false);
+                Logger.error('PlaidLinkModal', 'No public token received from Plaid');
               }
             },
             onExit: (linkExit: any) => {
+              if (!isMounted) return;
+
               Logger.info('PlaidLinkModal', 'Plaid Link exited', {
                 hasError: !!linkExit?.error,
                 errorCode: linkExit?.error?.errorCode,
@@ -110,18 +127,21 @@ export default function PlaidLinkModal({
                 Logger.info('PlaidLinkModal', 'User closed Plaid Link normally', {
                   status: linkExit?.metadata?.status,
                 });
+                setIsLoading(false);
                 onClose();
               }
             },
           });
           Logger.debug('PlaidLinkModal', 'open() function called successfully');
         } catch (openErr: any) {
+          if (!isMounted) return;
           Logger.error('PlaidLinkModal', 'Failed to open Link UI', {
             error: openErr instanceof Error ? openErr.message : String(openErr),
           });
           throw openErr;
         }
       } catch (err: any) {
+        if (!isMounted) return;
         const errorMessage = err?.message || (err instanceof Error ? err.message : 'Failed to initialize Plaid Link');
         setError(errorMessage);
         Logger.error('PlaidLinkModal', 'Fatal error in openPlaidLinkFlow', { error: errorMessage });
@@ -136,15 +156,17 @@ export default function PlaidLinkModal({
 
     // Cleanup: destroy session when modal closes
     return () => {
-      if (!isVisible) {
-        destroy().catch((err: any) => {
-          Logger.warn('PlaidLinkModal', 'Failed to destroy Plaid session', {
-            error: err instanceof Error ? err.message : 'Unknown error',
-          });
+      isMounted = false;
+      try {
+        destroy();
+        Logger.debug('PlaidLinkModal', 'Plaid session destroyed on cleanup');
+      } catch (err: any) {
+        Logger.warn('PlaidLinkModal', 'Failed to destroy Plaid session', {
+          error: err instanceof Error ? err.message : 'Unknown error',
         });
       }
     };
-  }, [isVisible, linkToken, confirmPlaidExchange, onClose, onSuccess, error, isLoading]);
+  }, [isVisible, linkToken, confirmPlaidExchange, onClose, onSuccess]);
 
   return (
     <Modal visible={isVisible} transparent statusBarTranslucent onRequestClose={onClose}>

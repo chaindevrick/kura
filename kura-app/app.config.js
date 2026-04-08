@@ -2,7 +2,7 @@ module.exports = {
   expo: {
     name: "kura-app",
     slug: "kura-app",
-    version: "1.0.0",
+    version: "0.0.1",
     orientation: "portrait",
     icon: "./assets/icon.png",
     userInterfaceStyle: "light",
@@ -25,6 +25,9 @@ module.exports = {
     ios: {
       bundleIdentifier: "com.rick.kuraapp",
       supportsTablet: true,
+      infoPlist: {
+        ITSAppUsesNonExemptEncryption: false,
+      },
     },
     android: {
       package: "com.rick.kuraapp",
@@ -38,14 +41,9 @@ module.exports = {
     web: {
       favicon: "./assets/favicon.png",
     },
-    // ✅ 环境变量配置
-    // 关于 SSL 证书问题的说明:
-    // - React Native 在开发环境会拒绝自签名的 HTTPS 证书
-    // - 解决方案: 在 .env.local 中设置 EXPO_PUBLIC_BACKEND_URL_DEV=http://localhost:8080
-    // - 或者让后端在开发环境同时支持 HTTP 和 HTTPS
     extra: {
       eas: {
-        projectId: "your-eas-project-id",
+        projectId: "65a47cb5-faa8-4d32-805c-e35ced4da335",
       },
       walletConnectProjectId:
         process.env.EXPO_PUBLIC_WALLETCONNECT_PROJECT_ID ||

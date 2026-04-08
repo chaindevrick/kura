@@ -44,6 +44,7 @@ export default function ConnectAccountModal({
   const handlePlaidModalClose = () => {
     setShowPlaidModal(false);
     setIsConnecting(null);
+    setError(null);
   };
 
   const handlePlaidModalSuccess = () => {
