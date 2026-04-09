@@ -4,8 +4,10 @@ import { View, Modal, Dimensions, TouchableWithoutFeedback, ScrollView, Touchabl
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, runOnJS } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppStore } from '../../../shared/store/useAppStore';
+import { useAppTranslation } from '../../../shared/hooks/useAppTranslation';
 import UserProfile from '../components/UserProfile';
 import BaseCurrencySelector from '../components/BaseCurrencySelector';
+import LanguageSelector from '../components/LanguageSelector';
 import PreferenceToggle from '../components/PreferenceToggle';
 import SectionHeader from '../components/SectionHeader';
 import SettingsList from '../components/SettingsList';
@@ -24,10 +26,12 @@ export default function UserSettingsModal({ isVisible, onClose }: UserSettingsMo
   const [showProfileSecurity, setShowProfileSecurity] = useState(false);
   const [showConnectedAccounts, setShowConnectedAccounts] = useState(false);
   const animationProgress = useSharedValue(0);
+  const { t } = useAppTranslation();
   const userProfile = useAppStore((state) => state.userProfile);
   const authStatus = useAppStore((state) => state.authStatus);
   const preferences = useAppStore((state) => state.preferences);
   const setBaseCurrency = useAppStore((state) => state.setBaseCurrency);
+  const setLanguage = useAppStore((state) => state.setLanguage);
   const toggleLargeTransactionAlerts = useAppStore((state) => state.toggleLargeTransactionAlerts);
   const toggleWeeklyAiSummary = useAppStore((state) => state.toggleWeeklyAiSummary);
   const clearAuthSession = useAppStore((state) => state.clearAuthSession);
@@ -107,7 +111,7 @@ export default function UserSettingsModal({ isVisible, onClose }: UserSettingsMo
         <Animated.View style={[{ width: '100%', height: '100%', backgroundColor: '#0B0B0F' }, drawerStyle]}>
           <ScrollView style={{ flex: 1, paddingTop: 64, paddingHorizontal: 24 }} contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
-              <Text style={{ color: '#FFFFFF', fontSize: 20, fontWeight: 'bold' }}>Account</Text>
+              <Text style={{ color: '#FFFFFF', fontSize: 20, fontWeight: 'bold' }}>{t('settings.account')}</Text>
               <TouchableOpacity onPress={handleClose} style={{ width: 32, height: 32, backgroundColor: '#1A1A24', borderRadius: 16, alignItems: 'center', justifyContent: 'center' }}>
                 <Ionicons name="close" size={20} color="#9CA3AF" />
               </TouchableOpacity>
@@ -119,27 +123,31 @@ export default function UserSettingsModal({ isVisible, onClose }: UserSettingsMo
               membershipLabel={userProfile.membershipLabel}
             />
 
-            <SectionHeader title="Preferences" />
+            <SectionHeader title={t('settings.preferences')} />
             <View style={{ flexDirection: 'column', gap: 8, marginBottom: 32 }}>
               <BaseCurrencySelector 
                 selectedCurrency={preferences.baseCurrency}
                 onSelectCurrency={setBaseCurrency}
               />
+              <LanguageSelector 
+                selectedLanguage={preferences.language}
+                onSelectLanguage={setLanguage}
+              />
               <PreferenceToggle
-                label="Large Transactions"
-                description="Alert on spends over $500"
+                label={t('settings.largeTransactions')}
+                description={t('settings.largeTransactionsDescription')}
                 value={preferences.largeTransactionAlerts}
                 onValueChange={toggleLargeTransactionAlerts}
               />
               <PreferenceToggle
-                label="Weekly AI Summary"
-                description="Kura insights via push updates"
+                label={t('settings.weeklyAiSummary')}
+                description={t('settings.weeklyAiSummaryDescription')}
                 value={preferences.weeklyAiSummary}
                 onValueChange={toggleWeeklyAiSummary}
               />
             </View>
 
-            <SectionHeader title="Settings" />
+            <SectionHeader title={t('settings.general')} />
             <SettingsList 
               onProfileSecurityPress={() => setShowProfileSecurity(true)}
               onConnectedAccountsPress={() => setShowConnectedAccounts(true)}

@@ -1,22 +1,29 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { SUPPORTED_CURRENCIES, getCurrencyName } from '../../../shared/utils/currencyFormatter';
 import { useAppTranslation } from '../../../shared/hooks/useAppTranslation';
+import type { Language } from '../../../shared/store/useAppStore';
 
-interface BaseCurrencySelectorProps {
-  selectedCurrency: 'USD' | 'EUR' | 'TWD';
-  onSelectCurrency: (currency: 'USD' | 'EUR' | 'TWD') => void;
+interface LanguageSelectorProps {
+  selectedLanguage: Language;
+  onSelectLanguage: (language: Language) => void;
 }
 
-export default function BaseCurrencySelector({ selectedCurrency, onSelectCurrency }: BaseCurrencySelectorProps) {
+const SUPPORTED_LANGUAGES: { code: Language; name: string; nativeName: string }[] = [
+  { code: 'en', name: 'English', nativeName: 'English' },
+  { code: 'zh', name: 'Chinese', nativeName: '中文' },
+];
+
+export default function LanguageSelector({ selectedLanguage, onSelectLanguage }: LanguageSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const { t } = useAppTranslation();
 
-  const handleSelectCurrency = (currency: 'USD' | 'EUR' | 'TWD') => {
-    onSelectCurrency(currency);
+  const handleSelectLanguage = (language: Language) => {
+    onSelectLanguage(language);
     setIsOpen(false);
   };
+
+  const currentLanguage = SUPPORTED_LANGUAGES.find((lang) => lang.code === selectedLanguage);
 
   return (
     <View style={{ marginBottom: 12, position: 'relative' }}>
@@ -25,26 +32,26 @@ export default function BaseCurrencySelector({ selectedCurrency, onSelectCurrenc
         style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, backgroundColor: '#1A1A24', borderRadius: 12, borderWidth: 1, borderColor: 'rgba(139, 92, 246, 0.2)' }}
       >
         <View>
-          <Text style={{ color: '#FFFFFF', fontWeight: '500' }}>{t('settings.baseCurrency')}</Text>
-          <Text style={{ fontSize: 12, color: '#999999', marginTop: 2 }}>{t('settings.currencyDescription')}</Text>
+          <Text style={{ color: '#FFFFFF', fontWeight: '500' }}>{t('settings.language')}</Text>
+          <Text style={{ fontSize: 12, color: '#999999', marginTop: 2 }}>{t('settings.languageDescription')}</Text>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#8B5CF6' }}>{selectedCurrency}</Text>
+          <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#8B5CF6' }}>{currentLanguage?.nativeName}</Text>
           <Ionicons name={isOpen ? 'chevron-up' : 'chevron-down'} size={20} color="#8B5CF6" />
         </View>
       </TouchableOpacity>
 
       {isOpen && (
         <View style={{ position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 8, backgroundColor: '#1A1A24', borderRadius: 12, borderWidth: 1, borderColor: 'rgba(139, 92, 246, 0.2)', zIndex: 1000, overflow: 'hidden' }}>
-          {(SUPPORTED_CURRENCIES as Array<'USD' | 'EUR' | 'TWD'>).map((currency, index) => (
+          {SUPPORTED_LANGUAGES.map((language, index) => (
             <TouchableOpacity
-              key={currency}
-              onPress={() => handleSelectCurrency(currency)}
+              key={language.code}
+              onPress={() => handleSelectLanguage(language.code)}
               style={{
                 paddingHorizontal: 16,
                 paddingVertical: 12,
-                backgroundColor: selectedCurrency === currency ? 'rgba(139, 92, 246, 0.2)' : '#1A1A24',
-                borderBottomWidth: index < (SUPPORTED_CURRENCIES as Array<'USD' | 'EUR' | 'TWD'>).length - 1 ? 1 : 0,
+                backgroundColor: selectedLanguage === language.code ? 'rgba(139, 92, 246, 0.2)' : '#1A1A24',
+                borderBottomWidth: index < SUPPORTED_LANGUAGES.length - 1 ? 1 : 0,
                 borderBottomColor: 'rgba(139, 92, 246, 0.1)',
                 flexDirection: 'row',
                 justifyContent: 'space-between',
@@ -52,10 +59,10 @@ export default function BaseCurrencySelector({ selectedCurrency, onSelectCurrenc
               }}
             >
               <View>
-                <Text style={{ color: '#FFFFFF', fontWeight: '500', fontSize: 14 }}>{currency}</Text>
-                <Text style={{ color: '#999999', fontSize: 12, marginTop: 2 }}>{getCurrencyName(currency)}</Text>
+                <Text style={{ color: '#FFFFFF', fontWeight: '500', fontSize: 14 }}>{language.nativeName}</Text>
+                <Text style={{ color: '#999999', fontSize: 12, marginTop: 2 }}>{language.name}</Text>
               </View>
-              {selectedCurrency === currency && (
+              {selectedLanguage === language.code && (
                 <Ionicons name="checkmark" size={18} color="#8B5CF6" />
               )}
             </TouchableOpacity>

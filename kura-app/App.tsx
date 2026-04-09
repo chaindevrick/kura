@@ -5,6 +5,9 @@ import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { I18nextProvider } from 'react-i18next';
+import './src/shared/locales/i18n'; // Initialize i18n
+import i18n from './src/shared/locales/i18n';
 import { useAppStore } from './src/shared/store/useAppStore';
 import Logger from './src/shared/utils/Logger';
 import { getBackendBaseUrl } from './src/shared/api/authApi';
@@ -133,12 +136,14 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <AppKitProvider instance={appKit}>
-        <NavigationContainer theme={KuraDarkTheme}>
-          <StatusBar style="light" translucent={true} />
-          {authStatus === 'authenticated' ? <MainNavigator /> : <AuthNavigator />}
-        </NavigationContainer>
-      </AppKitProvider>
+      <I18nextProvider i18n={i18n}>
+        <AppKitProvider instance={appKit}>
+          <NavigationContainer theme={KuraDarkTheme}>
+            <StatusBar style="light" translucent={true} />
+            {authStatus === 'authenticated' ? <MainNavigator /> : <AuthNavigator />}
+          </NavigationContainer>
+        </AppKitProvider>
+      </I18nextProvider>
     </SafeAreaProvider>
   );
 }
