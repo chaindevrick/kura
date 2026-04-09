@@ -34,7 +34,3 @@ README.md
 
 # Scripts
 scripts/
-
-# Other
-.eslintignore
-tailwind.config.ts
