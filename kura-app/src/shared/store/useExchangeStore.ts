@@ -1,5 +1,9 @@
 import { create } from 'zustand';
-import { InvestmentAccount, Investment } from './useFinanceStore';
+import { InvestmentAccount, Investment, ExchangeBalance } from './useFinanceStore';
+import { 
+  fetchExchangeBalances as fetchExchangeBalancesApi,
+  getConnectedExchangeAccounts,
+} from '../api/exchangeApi';
 import Logger from '../utils/Logger';
 
 export interface ExchangeAccount {
@@ -16,6 +20,7 @@ interface ExchangeStoreState {
   exchangeAccounts: ExchangeAccount[];
   exchangeInvestmentAccounts: InvestmentAccount[]; // InvestmentAccount 形式
   exchangeInvestments: Investment[]; // Investment 形式
+  exchangeBalances: Record<string, ExchangeBalance[]>; // 原始余額數據
   isLoading: Record<string, boolean>; // 按 exchangeAccountId 追蹤加載狀態
   error: string | null;
   lastSyncedTime: Record<string, number | null>; // 按 exchangeAccountId 追蹤同步時間
@@ -23,11 +28,13 @@ interface ExchangeStoreState {
   // Actions
   addExchangeAccount: (account: ExchangeAccount) => void;
   removeExchangeAccount: (exchangeAccountId: string) => void;
+  hydrateExchangeAccounts: (token: string) => Promise<void>;
   setExchangeData: (
     exchangeAccountId: string,
     investmentAccount: InvestmentAccount,
     investments: Investment[]
   ) => void;
+  fetchExchangeBalances: (exchangeAccountId: string, token: string) => Promise<void>;
   setLoading: (exchangeAccountId: string, loading: boolean) => void;
   setError: (error: string | null) => void;
   clearAll: () => void;
@@ -38,11 +45,33 @@ interface ExchangeStoreState {
   getExchangesByType: (exchange: string) => InvestmentAccount[];
 }
 
+/**
+ * 將 ExchangeBalance 轉換為 Investment 物件
+ */
+function balanceToInvestment(
+  balance: ExchangeBalance,
+  accountId: string,
+  exchange: string
+): Investment {
+  return {
+    id: `${accountId}-${balance.symbol}`,
+    accountId,
+    symbol: balance.symbol,
+    name: balance.symbol, // Will be enriched with coin name if available
+    holdings: balance.total,
+    currentPrice: 0, // Will be fetched separately if needed
+    change24h: 0,
+    type: 'crypto',
+    logo: `https://www.google.com/s2/favicons?domain=${exchange}.com&sz=128`,
+  };
+}
+
 export const useExchangeStore = create<ExchangeStoreState>((set, get) => ({
   // Initial State
   exchangeAccounts: [],
   exchangeInvestmentAccounts: [],
   exchangeInvestments: [],
+  exchangeBalances: {},
   isLoading: {},
   error: null,
   lastSyncedTime: {},
@@ -80,6 +109,44 @@ export const useExchangeStore = create<ExchangeStoreState>((set, get) => ({
     }));
 
     Logger.info('ExchangeStore', '✅ Exchange account removed');
+  },
+
+  hydrateExchangeAccounts: async (token: string) => {
+    try {
+      Logger.debug('ExchangeStore', 'Hydrating exchange accounts from backend');
+
+      const accounts = await getConnectedExchangeAccounts(token);
+
+      Logger.debug('ExchangeStore', 'Exchange accounts response received', {
+        isArray: Array.isArray(accounts),
+        type: typeof accounts,
+        count: Array.isArray(accounts) ? accounts.length : 'N/A',
+      });
+
+      if (!Array.isArray(accounts)) {
+        Logger.warn('ExchangeStore', 'Exchange accounts response is not an array', {
+          received: accounts,
+        });
+        return;
+      }
+
+      Logger.info('ExchangeStore', 'Exchange accounts hydrated', {
+        count: accounts.length,
+        exchanges: accounts.map((a) => a.exchange).join(', '),
+      });
+
+      set({ exchangeAccounts: accounts });
+
+      // Also sync to useFinanceStore so exchangeAccounts is available there
+      const { useFinanceStore } = await import('./useFinanceStore');
+      accounts.forEach((account) => {
+        useFinanceStore.getState().addExchangeAccount(account);
+      });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to hydrate exchange accounts';
+      Logger.error('ExchangeStore', 'Failed to hydrate exchange accounts', { error: errorMessage });
+      // Don't throw - exchange accounts are optional
+    }
   },
 
   setExchangeData: (
@@ -127,12 +194,146 @@ export const useExchangeStore = create<ExchangeStoreState>((set, get) => ({
     set({ error });
   },
 
+  fetchExchangeBalances: async (exchangeAccountId: string, token: string) => {
+    try {
+      set((state) => ({
+        isLoading: {
+          ...state.isLoading,
+          [exchangeAccountId]: true,
+        },
+        error: null,
+      }));
+
+      // Validate account exists and is complete
+      const exchangeAccount = get().exchangeAccounts.find((acc) => acc.id === exchangeAccountId);
+      if (!exchangeAccount) {
+        throw new Error(`Exchange account ${exchangeAccountId} not found in store`);
+      }
+
+      // Check account completeness
+      const missingFields = [];
+      if (!exchangeAccount.id) missingFields.push('id');
+      if (!exchangeAccount.exchange) missingFields.push('exchange');
+      if (!exchangeAccount.accountName) missingFields.push('accountName');
+      if (!exchangeAccount.userId) missingFields.push('userId');
+      if (!exchangeAccount.createdAt) missingFields.push('createdAt');
+
+      Logger.debug('ExchangeStore', 'Fetching exchange balances', {
+        exchangeAccountId,
+        complete: missingFields.length === 0,
+        missingFields,
+      });
+
+      const snapshot = await fetchExchangeBalancesApi(exchangeAccountId, token);
+
+      Logger.debug('ExchangeStore', 'Exchange snapshot received', {
+        balanceCount: snapshot.balances?.length,
+        totalValueUSD: snapshot.totalValueUSD,
+      });
+
+      const accountForSetup = get().exchangeAccounts.find((acc) => acc.id === exchangeAccountId);
+
+      // Create InvestmentAccount for this exchange
+      const investmentAccount: InvestmentAccount = {
+        id: exchangeAccountId,
+        name: accountForSetup?.accountName || `${accountForSetup?.exchange || 'Unknown'} Account`,
+        type: 'Exchange',
+        logo: `https://www.google.com/s2/favicons?domain=${accountForSetup?.exchange || 'exchange'}.com&sz=128`,
+      };
+
+      // Convert ExchangeBalance array to Investment array
+      const investments = (snapshot.balances || []).map((balance) =>
+        balanceToInvestment(balance, exchangeAccountId, accountForSetup?.exchange || 'unknown')
+      );
+
+      Logger.info('ExchangeStore', 'Exchange balances converted to investments', {
+        exchangeAccountId,
+        investmentCount: investments.length,
+      });
+
+      set((state) => {
+        // Update exchange account last sync time
+        const updatedAccounts = state.exchangeAccounts.map((account) =>
+          account.id === exchangeAccountId
+            ? { ...account, lastSyncedAt: snapshot.lastFetchedAt }
+            : account
+        );
+
+        // Remove old investments for this account and add new ones
+        const filteredInvestments = state.exchangeInvestments.filter(
+          (inv) => inv.accountId !== exchangeAccountId
+        );
+
+        return {
+          exchangeAccounts: updatedAccounts,
+          exchangeBalances: {
+            ...state.exchangeBalances,
+            [exchangeAccountId]: snapshot.balances,
+          },
+          exchangeInvestmentAccounts: [
+            ...state.exchangeInvestmentAccounts.filter((inv) => inv.id !== exchangeAccountId),
+            investmentAccount,
+          ],
+          exchangeInvestments: [...filteredInvestments, ...investments],
+          lastSyncedTime: {
+            ...state.lastSyncedTime,
+            [exchangeAccountId]: Date.now(),
+          },
+          isLoading: {
+            ...state.isLoading,
+            [exchangeAccountId]: false,
+          },
+        };
+      });
+
+      Logger.info('ExchangeStore', 'Exchange balances updated successfully', {
+        exchangeAccountId,
+        balanceCount: snapshot.balances?.length,
+        investmentCount: investments.length,
+      });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch exchange balances';
+      const account = get().exchangeAccounts.find(a => a.id === exchangeAccountId);
+      
+      // Check what fields are missing
+      const missingFields = [];
+      if (!account) {
+        missingFields.push('account-not-found');
+      } else {
+        if (!account.accountName) missingFields.push('accountName');
+        if (!account.userId) missingFields.push('userId');
+        if (!account.createdAt) missingFields.push('createdAt');
+        if (!account.lastSyncedAt) missingFields.push('lastSyncedAt');
+        if (!account.id) missingFields.push('id');
+        if (!account.exchange) missingFields.push('exchange');
+      }
+      
+      Logger.error('ExchangeStore', 'Failed to fetch exchange balances', {
+        error: errorMessage,
+        exchangeAccountId,
+        accountMissing: missingFields.length > 0 ? missingFields : 'all-fields-present',
+        accountData: account,
+      });
+
+      set((state) => ({
+        isLoading: {
+          ...state.isLoading,
+          [exchangeAccountId]: false,
+        },
+        error: errorMessage,
+      }));
+
+      throw error;
+    }
+  },
+
   clearAll: () => {
     Logger.warn('ExchangeStore', '🗑️ Clearing all exchange data');
     set({
       exchangeAccounts: [],
       exchangeInvestmentAccounts: [],
       exchangeInvestments: [],
+      exchangeBalances: {},
       isLoading: {},
       error: null,
       lastSyncedTime: {},

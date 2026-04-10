@@ -79,6 +79,15 @@ async function exchangeRequest<T>(
   options: RequestInit = {},
   token?: string
 ): Promise<T> {
+  // Validate path to prevent undefined/null URLs
+  if (!path || typeof path !== 'string') {
+    throw new ExchangeApiError('Invalid path: path must be a non-empty string', 400);
+  }
+  
+  if (path.includes('undefined') || path.includes('null')) {
+    throw new ExchangeApiError(`Invalid path: path contains invalid values (${path})`, 400);
+  }
+
   const baseUrl = getBackendBaseUrl();
   const url = `${baseUrl}/api/exchange${path}`;
 
@@ -102,10 +111,25 @@ async function exchangeRequest<T>(
       headers,
     });
 
-    const body = (await response.json()) as T & ApiErrorBody;
+    let body: T & ApiErrorBody;
+    try {
+      body = (await response.json()) as T & ApiErrorBody;
+    } catch (jsonError) {
+      // If JSON parsing fails, it might be HTML error page from 5xx error
+      const parseError = jsonError instanceof Error ? jsonError.message : 'Failed to parse response';
+      Logger.error('ExchangeAPI', 'Failed to parse response JSON', {
+        url,
+        status: response.status,
+        parseError,
+      });
+      throw new ExchangeApiError(
+        `Server error (${response.status}): ${parseError}`,
+        response.status
+      );
+    }
 
     if (!response.ok) {
-      const errorMessage = body.message || body.error || `HTTP ${response.status}`;
+      const errorMessage = body?.message || body?.error || `HTTP ${response.status}`;
       Logger.error('ExchangeAPI', 'Request failed:', {
         status: response.status,
         message: errorMessage,
@@ -121,7 +145,11 @@ async function exchangeRequest<T>(
       throw error;
     }
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    Logger.error('ExchangeAPI', 'Request error:', { error: errorMessage, url });
+    Logger.error('ExchangeAPI', 'Request error:', {
+      error: errorMessage,
+      url,
+      errorType: error instanceof Error ? error.constructor.name : typeof error,
+    });
     throw new ExchangeApiError(errorMessage, 0);
   }
 }
@@ -172,7 +200,8 @@ export async function connectExchangeAccount(
   credentials: ExchangeCredentials,
   token: string
 ): Promise<ExchangeAccount> {
-  return exchangeRequest<ExchangeAccount>(
+  // Response might be wrapped in { success, account } or direct ExchangeAccount
+  const response = await exchangeRequest<{ success?: boolean; account?: ExchangeAccount } | ExchangeAccount>(
     '/connect',
     {
       method: 'POST',
@@ -185,6 +214,13 @@ export async function connectExchangeAccount(
     },
     token
   );
+
+  // Handle both wrapped and direct response formats
+  if (response && 'account' in response && (response as any).account) {
+    return (response as any).account as ExchangeAccount;
+  }
+
+  return response as ExchangeAccount;
 }
 
 /**
@@ -194,11 +230,49 @@ export async function fetchExchangeBalances(
   exchangeAccountId: string,
   token: string
 ): Promise<ExchangeSnapshot> {
-  return exchangeRequest<ExchangeSnapshot>(
+  if (!exchangeAccountId) {
+    throw new ExchangeApiError('exchangeAccountId is required', 400);
+  }
+  const response = await exchangeRequest<{ snapshot?: ExchangeSnapshot } | ExchangeSnapshot>(
     `/${exchangeAccountId}/balances`,
     { method: 'GET' },
     token
   );
+
+  // Log raw response for debugging
+  Logger.debug('ExchangeAPI', 'Raw balance response', {
+    isSnapshot: !('snapshot' in response),
+    hasSnapshot: 'snapshot' in response,
+    response: JSON.stringify(response).substring(0, 300),
+  });
+
+  // Handle both wrapped and direct response formats
+  let snapshot: ExchangeSnapshot;
+  if (response && 'snapshot' in response && (response as any).snapshot) {
+    snapshot = (response as any).snapshot as ExchangeSnapshot;
+  } else {
+    snapshot = response as ExchangeSnapshot;
+  }
+
+  // Validate response structure before returning
+  if (!snapshot) {
+    throw new ExchangeApiError('Invalid balance response: snapshot is empty', 400);
+  }
+
+  if (!Array.isArray(snapshot.balances)) {
+    Logger.warn('ExchangeAPI', 'Balance response missing balances array', {
+      exchangeAccountId,
+      hasBalances: !!snapshot.balances,
+      balancesType: typeof snapshot.balances,
+    });
+    // Return with empty balances array to prevent crashes
+    return {
+      ...snapshot,
+      balances: [],
+    };
+  }
+
+  return snapshot;
 }
 
 /**
@@ -208,6 +282,9 @@ export async function fetchExchangeAssets(
   exchangeAccountId: string,
   token: string
 ): Promise<ExchangeAsset[]> {
+  if (!exchangeAccountId) {
+    throw new ExchangeApiError('exchangeAccountId is required', 400);
+  }
   const response = await exchangeRequest<{ assets: ExchangeAsset[] }>(
     `/${exchangeAccountId}/assets`,
     { method: 'GET' },
@@ -222,11 +299,27 @@ export async function fetchExchangeAssets(
 export async function getConnectedExchangeAccounts(
   token: string
 ): Promise<ExchangeAccount[]> {
-  return exchangeRequest<ExchangeAccount[]>(
+  const response = await exchangeRequest<{ accounts?: ExchangeAccount[] } | ExchangeAccount[]>(
     '/accounts',
     { method: 'GET' },
     token
   );
+
+  // Handle both wrapped and direct response formats
+  if (response && 'accounts' in response && Array.isArray((response as any).accounts)) {
+    return (response as any).accounts as ExchangeAccount[];
+  }
+
+  // If it's already an array, return it
+  if (Array.isArray(response)) {
+    return response as ExchangeAccount[];
+  }
+
+  // Fallback to empty array if response is invalid
+  Logger.warn('ExchangeAPI', 'Invalid exchange accounts response format', {
+    response: JSON.stringify(response).substring(0, 200),
+  });
+  return [];
 }
 
 /**
@@ -236,6 +329,9 @@ export async function disconnectExchangeAccount(
   exchangeAccountId: string,
   token: string
 ): Promise<void> {
+  if (!exchangeAccountId) {
+    throw new ExchangeApiError('exchangeAccountId is required', 400);
+  }
   await exchangeRequest<void>(
     `/${exchangeAccountId}`,
     { method: 'DELETE' },

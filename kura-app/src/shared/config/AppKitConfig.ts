@@ -31,12 +31,12 @@ export const appKit = createAppKit({
 
   metadata: {
     name: 'Kura',
-    description: 'One app to manage all your finances, from traditional to crypto.',
-    url: 'https://kura.dpdns.org',
+    description: 'One app to manage all your finances, from tradFi to crypto.',
+    url: 'https://www.kura-finance.com',
     icons: ['https://assets.reown.com/reown-studio/b6bfe22e-dbc4-4b7e-92c4-704c99fbc51c/image-3.png'],
     redirect: {
       native: 'kura://',
-      universal: 'https://kura.dpdns.org/dashboard',
+      universal: 'https://www.kura-finance.com/dashboard',
     }
   }
 })

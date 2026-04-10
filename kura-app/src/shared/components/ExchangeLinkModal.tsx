@@ -21,6 +21,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Logger from '../utils/Logger';
 import { useAppStore } from '../store/useAppStore';
 import { useFinanceStore } from '../store/useFinanceStore';
+import { useExchangeStore } from '../store/useExchangeStore';
 import {
   connectExchangeAccount,
   getSupportedExchanges,
@@ -40,7 +41,8 @@ export default function ExchangeLinkModal({
   onSuccess,
 }: ExchangeLinkModalProps) {
   const { authToken } = useAppStore();
-  const { addExchangeAccount, fetchExchangeBalances } = useFinanceStore();
+  const { addExchangeAccount } = useFinanceStore();
+  const { fetchExchangeBalances } = useExchangeStore();
 
   const [step, setStep] = useState<'select' | 'credentials'>('select');
   const [supportedExchanges, setSupportedExchanges] = useState<SupportedExchange[]>([]);
@@ -159,6 +161,18 @@ export default function ExchangeLinkModal({
       });
 
       const connectedAccount = await connectExchangeAccount(credentials, authToken);
+
+      // Validate backend response contains required fields
+      if (!connectedAccount?.id || !connectedAccount?.exchange) {
+        Logger.error('ExchangeLinkModal', 'Backend returned incomplete exchange account', {
+          has_id: !!connectedAccount?.id,
+          has_exchange: !!connectedAccount?.exchange,
+          has_userId: !!connectedAccount?.userId,
+          response: JSON.stringify(connectedAccount).substring(0, 200),
+        });
+        setError('Backend error: Invalid account response. Please try again.');
+        return;
+      }
 
       // Add to store with display name
       addExchangeAccount({

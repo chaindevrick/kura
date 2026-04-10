@@ -456,6 +456,20 @@ export const useAppStore = create<AppState>((set, get) => ({
       } catch (rateError) {
         Logger.warn('AppStore', 'Failed to load exchange rates during hydration', rateError);
       }
+
+      // Hydrate connected exchange accounts with 5-second timeout (optional)
+      try {
+        Logger.debug('AppStore', 'Hydrating exchange accounts');
+        const hydrateExchangeAccounts = useFinanceStore.getState().hydrateExchangeAccounts;
+        const exchangePromise = hydrateExchangeAccounts(storedToken);
+        const exchangeTimeout = new Promise<void>((_, reject) =>
+          setTimeout(() => reject(new Error('Exchange accounts hydration timeout')), 5000)
+        );
+        await Promise.race([exchangePromise, exchangeTimeout]);
+        Logger.info('AppStore', 'Exchange accounts hydrated successfully');
+      } catch (exchangeError) {
+        Logger.warn('AppStore', 'Failed to hydrate exchange accounts', exchangeError);
+      }
     } catch (error) {
       Logger.warn('AppStore', 'Failed to hydrate from storage', error);
       await clearStoredAuthToken();

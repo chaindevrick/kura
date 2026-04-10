@@ -5,6 +5,7 @@ interface Account {
   id: string;
   name: string;
   logo: string;
+  type?: 'Broker' | 'Exchange' | 'Web3 Wallet'; // 可選的帳戶類型標籤
 }
 
 interface AccountCapsulesProps {
@@ -15,6 +16,7 @@ interface AccountCapsulesProps {
 }
 
 export default function AccountCapsules({ accounts, selectedAccountId, onSelectAccount, onAddAccount }: AccountCapsulesProps) {
+
   return (
     <ScrollView
       horizontal
@@ -51,8 +53,14 @@ export default function AccountCapsules({ accounts, selectedAccountId, onSelectA
             gap: 8,
           }}
         >
-          <Image source={{ uri: account.logo }} style={{ width: 20, height: 20, borderRadius: 10 }} resizeMode="contain" />
-          <Text style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '600' }}>{account.name}</Text>
+          <Image
+            source={{ uri: account.logo }}
+            style={{ width: 20, height: 20, borderRadius: 10 }}
+            resizeMode="contain"
+          />
+          <Text style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '600' }}>
+            {account.name}
+          </Text>
         </TouchableOpacity>
       ))}
 

@@ -96,36 +96,34 @@ export function useWalletSync() {
   
   const prevStateRef = useRef<{ address?: string; chainId?: number }>({});
   const balanceFetchRef = useRef<AbortController | null>(null);
+  const syncInProgressRef = useRef(false);
+  const initializedRef = useRef(false);
 
   // 将同步逻辑提取为 useCallback，这样可以在任何地方调用
   const performSync = useCallback(async () => {
-    // 取消之前的请求
-    if (balanceFetchRef.current) {
-      balanceFetchRef.current.abort();
+    // 防止同时进行多个同步操作
+    if (syncInProgressRef.current) {
+      return;
     }
 
+    syncInProgressRef.current = true;
+
     try {
+      // 取消之前的请求
+      if (balanceFetchRef.current) {
+        balanceFetchRef.current.abort();
+      }
+
       const namespaceKeys = await AsyncStorage.getAllKeys();
-      Logger.debug('useWalletSync', 'All AsyncStorage keys:', {
-        count: namespaceKeys.length,
-        universalProviderKeys: namespaceKeys.filter(k => k.includes('universal_provider')),
-      });
-      
       const namespacesKey = namespaceKeys.find(key => 
         key.includes('universal_provider') && key.includes('/namespaces')
       );
-
-      Logger.debug('useWalletSync', 'Found namespaces key:', { namespacesKey });
 
       let address: string | undefined;
       let chainId: number | undefined;
 
       if (namespacesKey) {
         const namespacesData = await AsyncStorage.getItem(namespacesKey);
-        Logger.debug('useWalletSync', 'Namespaces data:', { 
-          hasData: !!namespacesData,
-          data: namespacesData ? JSON.parse(namespacesData) : null,
-        });
         
         if (namespacesData) {
           const namespaces = JSON.parse(namespacesData);
@@ -142,8 +140,6 @@ export function useWalletSync() {
 
       // 监听断开连接
       if (prevStateRef.current.address && !address) {
-        Logger.warn('useWalletSync', '🔌 Wallet disconnected');
-        
         const prevAddress = prevStateRef.current.address;
         const prevChainId = prevStateRef.current.chainId || 1;
         
@@ -154,10 +150,7 @@ export function useWalletSync() {
         setAddress(undefined);
         setChainId(undefined);
         
-        Logger.info('useWalletSync', '✅ Wallet data cleared', { 
-          address: prevAddress.substring(0, 6) + '...', 
-          chainId: prevChainId 
-        });
+        Logger.warn('useWalletSync', '🔌 Wallet disconnected');
         
         prevStateRef.current = {};
         return;
@@ -227,21 +220,24 @@ export function useWalletSync() {
       Logger.error('useWalletSync', 'Failed to check wallet state', {
         error: err instanceof Error ? err.message : String(err),
       });
+    } finally {
+      syncInProgressRef.current = false;
     }
   }, [syncConnectedWalletPosition, removeConnectedWalletPosition]);
 
-  // 初始化时检查一次连接状态
+  // 初始化时检查一次连接状态（仅一次）
   useEffect(() => {
-    Logger.debug('useWalletSync', 'Initializing wallet sync');
+    if (initializedRef.current) return;
+    initializedRef.current = true;
+    
     performSync();
-  }, [performSync]);
+  }, []); // 空依赖数组 - 仅运行一次
 
-  // 定期检查（10分钟）以防止长时间未同步
+  // 定期检查（30分钟）以防止长时间未同步
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      Logger.debug('useWalletSync', 'Periodic sync check triggered');
       performSync();
-    }, 10 * 60 * 1000);
+    }, 30 * 60 * 1000); // 增加到 30 分钟
 
     return () => clearTimeout(timeoutId);
   }, [performSync]);
@@ -250,8 +246,6 @@ export function useWalletSync() {
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (state: AppStateStatus) => {
       if (state === 'active') {
-        Logger.debug('useWalletSync', 'App resumed to foreground - checking wallet status');
-        // 立即检查一次连接状态
         performSync();
       }
     });
@@ -271,9 +265,7 @@ export function useWalletSync() {
           Logger.info('useWalletSync', '🔓 Opening AppKit modal');
           const result = await openAppKit();
           // 打开后等待更长时间，让 AppKit 有時間更新狀態并保存到 AsyncStorage
-          Logger.info('useWalletSync', '⏳ Waiting for AppKit to save wallet state (2s delay)');
           setTimeout(() => {
-            Logger.debug('useWalletSync', 'Syncing after AppKit modal close');
             performSync();
           }, 2000); // 增加到 2 秒
           return result;
@@ -288,8 +280,6 @@ export function useWalletSync() {
     
     // 手动刷新钱包数据（用于下拉刷新或按钮点击）
     refreshBalance: useCallback(async () => {
-      Logger.info('useWalletSync', '🔄 Manual refresh triggered');
-      
       // 立即触发一次检查
       await (async () => {
         try {
