@@ -23,16 +23,20 @@ const MIN_LOG_LEVEL = __DEV__ ? LOG_LEVEL.debug : LOG_LEVEL.warn;
 const DEDUP_MAP = new Map<string, number>();
 const DEDUP_TIMEOUT = 1000; // 1 秒內去重
 
-// 過濾掉 base64 圖片数据
+// 過濾掉 base64 數据，只顯示前10個字符
 function sanitizeData(data: any): any {
   if (data === null || data === undefined) {
     return data;
   }
 
   if (typeof data === 'string') {
-    // 檢查是否為 base64 圖片
-    if (data.startsWith('data:image/') || (data.length > 1000 && /^[A-Za-z0-9+/]*={0,2}$/.test(data.substring(0, 100)))) {
+    // 檢查是否為 base64 或長字符串
+    if (data.startsWith('data:image/')) {
       return '[Image Base64 - hidden]';
+    }
+    // 如果是超過 100 個字符的 base64 字符串，只顯示前 10 個字符
+    if (data.length > 100 && /^[A-Za-z0-9+/]*={0,2}$/.test(data.substring(0, 100))) {
+      return `${data.substring(0, 10)}... (${data.length} chars)`;
     }
     return data;
   }
@@ -46,16 +50,23 @@ function sanitizeData(data: any): any {
     for (const key in data) {
       if (Object.prototype.hasOwnProperty.call(data, key)) {
         const value = data[key];
-        // 檢查常見的 base64 圖片 key 名稱
-        if (key.toLowerCase().includes('image') || key.toLowerCase().includes('base64') || key.toLowerCase().includes('photo')) {
-          if (typeof value === 'string' && (value.startsWith('data:image/') || value.length > 1000)) {
+        
+        // 對所有字符串值進行統一檢測
+        if (typeof value === 'string') {
+          // 檢查是否為 Image Base64
+          if (value.startsWith('data:image/')) {
             sanitized[key] = '[Image Base64 - hidden]';
-          } else {
-            sanitized[key] = sanitizeData(value);
+            continue;
           }
-        } else {
-          sanitized[key] = sanitizeData(value);
+          // 檢查是否為長 Base64 字符串（不限於特定 key 名稱）
+          if (value.length > 100 && /^[A-Za-z0-9+/]*={0,2}$/.test(value.substring(0, 100))) {
+            sanitized[key] = `${value.substring(0, 10)}... (${value.length} chars)`;
+            continue;
+          }
         }
+        
+        // 遞歸處理複雜類型
+        sanitized[key] = sanitizeData(value);
       }
     }
     return sanitized;

@@ -4,11 +4,15 @@ import {
   Text,
   TouchableOpacity,
   ScrollView,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
+import Purchases from 'react-native-purchases';
 import { useAppTranslation } from '../../../shared/hooks/useAppTranslation';
 import { useAppStore } from '../../../shared/store/useAppStore';
+import { getPurchaseErrorMessage } from '../../../shared/config/RevenueCatConfig';
 
 type MembershipTier = 'basic' | 'pro' | 'ultimate' | 'vip';
 
@@ -23,6 +27,7 @@ interface TierData {
   price: string;
   features: TierFeature[];
   color: string;
+  productId: string; // RevenueCat Product ID
 }
 
 const MEMBERSHIP_TIERS: Record<MembershipTier, TierData> = {
@@ -30,6 +35,7 @@ const MEMBERSHIP_TIERS: Record<MembershipTier, TierData> = {
     name: 'Basic',
     price: 'membership.basic.name',
     color: '#10B981',
+    productId: 'kura_basic', // Free tier, no purchase needed
     features: [
       {
         icon: 'link',
@@ -52,6 +58,7 @@ const MEMBERSHIP_TIERS: Record<MembershipTier, TierData> = {
     name: 'Pro',
     price: 'membership.pro.name',
     color: '#3B82F6',
+    productId: 'kura_pro_annual', // RevenueCat Product ID
     features: [
       {
         icon: 'alert-circle',
@@ -79,6 +86,7 @@ const MEMBERSHIP_TIERS: Record<MembershipTier, TierData> = {
     name: 'Ultimate',
     price: 'membership.ultimate.name',
     color: '#8B5CF6',
+    productId: 'kura_ultimate_annual', // RevenueCat Product ID
     features: [
       {
         icon: 'layers',
@@ -101,6 +109,7 @@ const MEMBERSHIP_TIERS: Record<MembershipTier, TierData> = {
     name: 'VIP',
     price: 'membership.vip.name',
     color: '#F59E0B',
+    productId: 'kura_vip_annual', // RevenueCat Product ID
     features: [
       {
         icon: 'server',
@@ -124,6 +133,7 @@ export default function MembershipScreen({ navigation }: MembershipScreenProps) 
   const insets = useSafeAreaInsets();
   const { t } = useAppTranslation();
   const userProfile = useAppStore((state) => state.userProfile);
+  const [isPurchasing, setIsPurchasing] = useState(false);
 
   // Get current membership tier from Store and normalize it
   const getMembershipTierFromLabel = (label: string): MembershipTier => {
@@ -148,15 +158,164 @@ export default function MembershipScreen({ navigation }: MembershipScreenProps) 
 
   const currentTier = MEMBERSHIP_TIERS[selectedTier];
 
-  const handleUpgrade = () => {
-    // Special handling for VIP
-    if (selectedTier === 'vip') {
-      alert(t('membership.contactSalesDesc') || 'Please contact our sales team for VIP pricing');
-      return;
+  const handleUpgrade = async () => {
+    try {
+      setIsPurchasing(true);
+
+      // Special handling for VIP
+      if (selectedTier === 'vip') {
+        Alert.alert(
+          'Contact Sales',
+          'Please contact our sales team for VIP pricing',
+          [
+            { text: 'Cancel', onPress: () => setIsPurchasing(false) },
+            { 
+              text: 'Email Us',
+              onPress: () => {
+                // Open email client
+                setIsPurchasing(false);
+                // TODO: Implement email link
+              }
+            },
+          ]
+        );
+        return;
+      }
+
+      // Basic tier - no purchase needed
+      if (selectedTier === 'basic') {
+        Alert.alert(
+          'Already on Basic',
+          'You are already on the Basic plan',
+          [{ text: 'OK', onPress: () => setIsPurchasing(false) }]
+        );
+        return;
+      }
+
+      // Get the product ID for selected tier
+      const productId = currentTier.productId;
+      const tierName = currentTier.name;
+
+      // Get available offerings from RevenueCat
+      // Reference: https://www.revenuecat.com/docs/getting-started/displaying-products
+      const offerings = await Purchases.getOfferings();
+
+      if (!offerings.current) {
+        // Debug: Log all available offerings
+        const allOfferingIds = offerings.all
+          ? Object.values(offerings.all).map((o: any) => o.identifier)
+          : [];
+        console.log('DEBUG: All offerings:', allOfferingIds);
+        throw new Error(
+          'No subscription plans available. Please try again later.'
+        );
+      }
+
+      const offering = offerings.current;
+
+      if (
+        !offering.availablePackages ||
+        offering.availablePackages.length === 0
+      ) {
+        throw new Error('No packages available for purchase');
+      }
+
+      // Debug logging
+      console.log('DEBUG: Looking for productId:', productId);
+      const packageList = (offering.availablePackages || []).map(
+        (pkg: any) => ({
+          identifier: pkg.identifier,
+          displayName: pkg.displayName,
+        })
+      );
+      console.log('DEBUG: Available packages:', packageList);
+
+      // Find the package matching our product ID
+      const selectedPackage = offering.availablePackages.find(
+        (pkg: any) => pkg.identifier === productId
+      );
+
+      if (!selectedPackage) {
+        const availableIds = (offering.availablePackages || [])
+          .map((pkg: any) => pkg.identifier)
+          .join(', ');
+        throw new Error(
+          `Package ${productId} not found. Available packages: ${availableIds}. Please ensure the product is configured in RevenueCat dashboard.`
+        );
+      }
+
+      // Show purchase confirmation with pricing
+      // Reference: https://www.revenuecat.com/docs/getting-started/making-purchases
+      const priceString = selectedPackage.product.priceString || 'Check AppStore';
+      Alert.alert(`Subscribe to ${tierName}`, `Price: ${priceString}`, [
+        {
+          text: 'Cancel',
+          onPress: () => setIsPurchasing(false),
+          style: 'cancel',
+        },
+        {
+          text: 'Subscribe',
+          onPress: async () => {
+            try {
+              // Perform the purchase
+              const purchaseResult = await Purchases.purchasePackage(
+                selectedPackage
+              );
+
+              // Check if purchase was successful by verifying entitlements
+              const { customerInfo } = purchaseResult;
+              const entitlements = customerInfo.entitlements.active;
+
+              // Check if any entitlement is active (indicating successful purchase)
+              if (Object.keys(entitlements).length > 0) {
+                Alert.alert(
+                  'Success',
+                  `Welcome to ${tierName}! Your subscription is now active.`,
+                  [
+                    {
+                      text: 'OK',
+                      onPress: () => {
+                        setIsPurchasing(false);
+                        navigation?.goBack();
+                      },
+                    },
+                  ]
+                );
+              } else {
+                throw new Error(
+                  'Purchase completed but subscription was not activated'
+                );
+              }
+            } catch (purchaseError) {
+              // Handle purchase errors
+              const errorMsg =
+                purchaseError instanceof Error
+                  ? purchaseError.message
+                  : String(purchaseError);
+
+              // Check if user cancelled
+              if (
+                errorMsg.includes('cancelled') ||
+                errorMsg.includes('Cancelled')
+              ) {
+                setIsPurchasing(false);
+                return;
+              }
+
+              throw purchaseError;
+            }
+          },
+        },
+      ]);
+    } catch (error) {
+      const errorMessage = getPurchaseErrorMessage(error);
+      
+      Alert.alert(
+        'Purchase Failed',
+        errorMessage,
+        [{ text: 'OK', onPress: () => setIsPurchasing(false) }]
+      );
     }
-    
-    // TODO: Implement purchase flow for other tiers
-    alert(`${getButtonText()} coming soon!`);
   };
 
   // Get button text based on user's current tier vs selected tier
@@ -397,13 +556,18 @@ export default function MembershipScreen({ navigation }: MembershipScreenProps) 
 
           <TouchableOpacity
             onPress={handleUpgrade}
+            disabled={isPurchasing || selectedTier === currentMembershipTier}
             style={{
-              backgroundColor: currentTier.color,
+              backgroundColor: isPurchasing || selectedTier === currentMembershipTier ? '#999999' : currentTier.color,
               paddingVertical: 12,
               borderRadius: 8,
               alignItems: 'center',
+              flexDirection: 'row',
+              justifyContent: 'center',
+              gap: 8,
             }}
           >
+            {isPurchasing && <ActivityIndicator color="#FFFFFF" />}
             <Text
               style={{
                 fontSize: 16,
@@ -411,7 +575,7 @@ export default function MembershipScreen({ navigation }: MembershipScreenProps) 
                 color: '#FFFFFF',
               }}
             >
-              {getButtonText()}
+              {isPurchasing ? 'Processing...' : getButtonText()}
             </Text>
           </TouchableOpacity>
         </View>

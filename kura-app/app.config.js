@@ -24,7 +24,7 @@ module.exports = {
       backgroundColor: "#ffffff",
     },
     ios: {
-      bundleIdentifier: "com.rick.kuraapp",
+      bundleIdentifier: "com.kurafinance.app",
       supportsTablet: true,
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
@@ -47,10 +47,10 @@ module.exports = {
       scheme: "kura"
     },
     android: {
-      package: "com.rick.kuraapp",
+      package: "com.kurafinance.app",
       adaptiveIcon: {
         foregroundImage: "./assets/adaptive-icon.png",
-        backgroundColor: "#ffffff",
+        backgroundColor: "#5a2d82",
       },
       edgeToEdgeEnabled: true,
       predictiveBackGestureEnabled: false,

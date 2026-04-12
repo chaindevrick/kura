@@ -10,6 +10,7 @@ import i18n from './src/shared/locales/i18n'; // Initialize i18n
 import { useAppStore } from './src/shared/store/useAppStore';
 import Logger from './src/shared/utils/Logger';
 import { getBackendBaseUrl } from './src/shared/api/authApi';
+import { initializeRevenueCat } from './src/shared/config/RevenueCatConfig';
 import Header from './src/components/Header';
 import TabNavigator from './src/components/TabNavigator';
 import NotificationScreen from './src/features/notifications/screens/NotificationScreen';
@@ -138,6 +139,10 @@ export default function App() {
         Logger.debug('App', 'Starting application initialization');
         Logger.debug('App', 'Backend URL', { url: getBackendBaseUrl() });
         Logger.debug('App', 'Request diagnostics enabled');
+        
+        // Initialize RevenueCat for in-app purchases
+        await initializeRevenueCat();
+        
         await hydrateFromStorage();
         Logger.info('App', 'Authentication initialized');
       } catch (error) {
