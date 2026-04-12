@@ -118,16 +118,10 @@ function MainNavigator() {
       <MainStack.Screen 
         name="Notifications" 
         component={NotificationScreen}
-        options={{
-          animationEnabled: true,
-        }}
       />
       <MainStack.Screen 
         name="NotificationSettings" 
         component={NotificationSettingsScreen}
-        options={{
-          animationEnabled: true,
-        }}
       />
     </MainStack.Navigator>
   );

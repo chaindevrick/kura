@@ -106,35 +106,37 @@
   "membership": {
     "title": "Membership",
     "manageYourPlan": "Manage Your Plan",
-    "billedMonthly": "Billed monthly",
-    "billedYearly": "Billed yearly",
+    "billedMonthly": "Billed monthly. Cancel anytime.",
     "upgradeTo": "Upgrade to",
     "currentPlan": "Current Plan",
-    "unlockFeatures": "Upgrade anytime to unlock premium features",
+    "unlockFeatures": "Unlock premium features",
     "billingCycle": "Billing Cycle",
     "monthly": "Monthly",
-    "yearly": "Yearly",
-    "savingsPercent": "Save",
-    "monthlyPrice": "$/month",
+    "annual": "Annual",
+    "savingsLabel": "Save {{percent}}%",
+    "perMonth": "/month",
+    "perYear": "/year",
+    "contactSales": "Contact Sales",
+    "contactSalesDesc": "Custom pricing for your enterprise needs",
     "pro": {
-      "name": "Pro",
+      "name": "Kura Pro",
       "description": "Advanced Plan",
-      "monthlyPrice": 5.99,
-      "yearlyPrice": 59.99,
-      "monthlyEquivalent": 4.99
+      "monthlyPrice": "$5.99",
+      "annualPrice": "$59.99",
+      "annualPriceNote": "Equivalent to $4.99/month"
     },
     "ultimate": {
-      "name": "Ultimate",
+      "name": "Kura Ultimate",
       "description": "Flagship Plan",
-      "monthlyPrice": 14.99,
-      "yearlyPrice": 149.99,
-      "monthlyEquivalent": 12.49
+      "monthlyPrice": "$14.99",
+      "annualPrice": "$149.99",
+      "annualPriceNote": "Equivalent to $12.49/month"
     },
     "vip": {
-      "name": "VIP",
+      "name": "Kura VIP",
       "description": "Exclusive Plan",
-      "yearlyPrice": 499.99,
-      "monthlyEquivalent": 41.66
+      "price": "$499.99+",
+      "priceNote": "/year"
     },
     "features": "Features",
     "connections": "Unlimited Connections",
@@ -166,6 +168,7 @@
     "taxExportDesc": "Export tax-compliant annual reports",
     "webhooksAPI": "Webhooks and API Access",
     "webhooksAPIDesc": "Full API and Webhooks integration capabilities"
+  },
   "transactions": {
     "title": "Transactions",
     "recent": "Recent Transactions",

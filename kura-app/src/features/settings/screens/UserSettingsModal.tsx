@@ -12,7 +12,6 @@ import Logger from '../../../shared/utils/Logger';
 import UserProfile from '../components/UserProfile';
 import BaseCurrencySelector from '../components/BaseCurrencySelector';
 import LanguageSelector from '../components/LanguageSelector';
-import PreferenceToggle from '../components/PreferenceToggle';
 import SectionHeader from '../components/SectionHeader';
 import SettingsList from '../components/SettingsList';
 import SignOutButton from '../components/SignOutButton';
@@ -85,7 +84,7 @@ export default function UserSettingsModal({ isVisible, onClose }: UserSettingsMo
         
         try {
           const imageUri = result.assets[0].uri;
-          Logger.info('UserSettingsModal', 'Image selected', { uri: imageUri, fileName: result.assets[0].filename });
+          Logger.info('UserSettingsModal', 'Image selected', { uri: imageUri, fileName: result.assets[0].fileName });
           
           // 使用 expo-file-system legacy API 轉換為 base64
           Logger.debug('UserSettingsModal', 'Starting base64 conversion');
@@ -172,7 +171,7 @@ export default function UserSettingsModal({ isVisible, onClose }: UserSettingsMo
     handleClose();
   };
 
-  if (!isVisible && animationProgress.value === 0) return null;
+  if (!isVisible) return null;
 
   // If Profile & Security is shown, render it instead
   if (showProfileSecurity) {
@@ -180,10 +179,10 @@ export default function UserSettingsModal({ isVisible, onClose }: UserSettingsMo
       <Modal visible={isVisible} transparent animationType="none">
         <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'flex-start' }}>
           <TouchableWithoutFeedback onPress={() => {}}>
-            <Animated.View style={[{ position: 'absolute', width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.6)' }, { opacity: animationProgress.value }]} />
+            <Animated.View style={[{ position: 'absolute', width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.6)' }, backdropStyle]} />
           </TouchableWithoutFeedback>
 
-          <Animated.View style={[{ width: '100%', height: '100%', backgroundColor: '#0B0B0F' }, { transform: [{ translateX: (1 - animationProgress.value) * SCREEN_WIDTH }] }]}>
+          <Animated.View style={[{ width: '100%', height: '100%', backgroundColor: '#0B0B0F' }, drawerStyle]}>
             <ProfileSecurityScreen onClose={() => setShowProfileSecurity(false)} />
           </Animated.View>
         </View>
@@ -197,10 +196,10 @@ export default function UserSettingsModal({ isVisible, onClose }: UserSettingsMo
       <Modal visible={isVisible} transparent animationType="none">
         <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'flex-start' }}>
           <TouchableWithoutFeedback onPress={() => {}}>
-            <Animated.View style={[{ position: 'absolute', width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.6)' }, { opacity: animationProgress.value }]} />
+            <Animated.View style={[{ position: 'absolute', width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.6)' }, backdropStyle]} />
           </TouchableWithoutFeedback>
 
-          <Animated.View style={[{ width: '100%', height: '100%', backgroundColor: '#0B0B0F' }, { transform: [{ translateX: (1 - animationProgress.value) * SCREEN_WIDTH }] }]}>
+          <Animated.View style={[{ width: '100%', height: '100%', backgroundColor: '#0B0B0F' }, drawerStyle]}>
             <ConnectedAccountsScreen onClose={() => setShowConnectedAccounts(false)} />
           </Animated.View>
         </View>
@@ -214,10 +213,10 @@ export default function UserSettingsModal({ isVisible, onClose }: UserSettingsMo
       <Modal visible={isVisible} transparent animationType="none">
         <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'flex-start' }}>
           <TouchableWithoutFeedback onPress={() => {}}>
-            <Animated.View style={[{ position: 'absolute', width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.6)' }, { opacity: animationProgress.value }]} />
+            <Animated.View style={[{ position: 'absolute', width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.6)' }, backdropStyle]} />
           </TouchableWithoutFeedback>
 
-          <Animated.View style={[{ width: '100%', height: '100%', backgroundColor: '#0B0B0F' }, { transform: [{ translateX: (1 - animationProgress.value) * SCREEN_WIDTH }] }]}>
+          <Animated.View style={[{ width: '100%', height: '100%', backgroundColor: '#0B0B0F' }, drawerStyle]}>
             <MembershipScreen 
               navigation={{
                 goBack: () => setShowMembership(false)
@@ -293,7 +292,7 @@ export default function UserSettingsModal({ isVisible, onClose }: UserSettingsMo
               >
                 <View style={{ flex: 1 }}>
                   <Text style={{ color: '#8B5CF6', fontSize: 14, fontWeight: '600', marginBottom: 4 }}>
-                    {userProfile.membershipLabel || t('common.appName')}
+                    {userProfile.membershipLabel || 'Free'}
                   </Text>
                   <Text style={{ color: '#999999', fontSize: 12 }}>
                     {t('membership.unlockFeatures')}

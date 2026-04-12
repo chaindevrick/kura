@@ -4,11 +4,9 @@ import {
   Text,
   TouchableOpacity,
   ScrollView,
-  SafeAreaView,
-  StyleSheet,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
 import { useAppTranslation } from '../../../shared/hooks/useAppTranslation';
 import { useAppStore } from '../../../shared/store/useAppStore';
 
@@ -26,29 +24,6 @@ interface TierData {
   features: TierFeature[];
   color: string;
 }
-
-interface PricingData {
-  monthlyPrice?: number;
-  yearlyPrice: number;
-  monthlyEquivalent: number;
-}
-
-const PRICING: Record<MembershipTier, PricingData> = {
-  pro: {
-    monthlyPrice: 5.99,
-    yearlyPrice: 59.99,
-    monthlyEquivalent: 4.99,
-  },
-  ultimate: {
-    monthlyPrice: 14.99,
-    yearlyPrice: 149.99,
-    monthlyEquivalent: 12.49,
-  },
-  vip: {
-    yearlyPrice: 499.99,
-    monthlyEquivalent: 41.66,
-  },
-};
 
 const MEMBERSHIP_TIERS: Record<MembershipTier, TierData> = {
   pro: {
@@ -146,7 +121,7 @@ const MEMBERSHIP_TIERS: Record<MembershipTier, TierData> = {
         description: 'membership.syncRealTimeDesc',
       },
       {
-        icon: 'tag',
+        icon: 'pricetag',
         name: 'membership.customTags',
         description: 'membership.customTagsDesc',
       },
@@ -170,50 +145,55 @@ interface MembershipScreenProps {
 
 export default function MembershipScreen({ navigation }: MembershipScreenProps) {
   const [selectedTier, setSelectedTier] = useState<MembershipTier>('ultimate');
-  const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('yearly');
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
   const insets = useSafeAreaInsets();
   const { t } = useAppTranslation();
   const userProfile = useAppStore((state) => state.userProfile);
 
   const currentTier = MEMBERSHIP_TIERS[selectedTier];
 
-  // VIP is only available yearly
-  const isVIP = selectedTier === 'vip';
-  const effectiveBillingCycle = isVIP ? 'yearly' : billingCycle;
-
-  const getPricing = () => {
-    const tierPricing = PRICING[selectedTier];
-    
-    if (effectiveBillingCycle === 'monthly') {
-      return {
-        price: `$${tierPricing.monthlyPrice}/mo`,
-        period: t('membership.billedMonthly'),
-        buttonText: `${t('membership.upgradeTo')} ${currentTier.name}`,
-      };
-    } else {
-      if (selectedTier === 'vip') {
-        return {
-          price: `$${tierPricing.yearlyPrice}/yr`,
-          period: `$${tierPricing.monthlyEquivalent}${t('membership.monthlyPrice')}`,
-          buttonText: `${t('membership.upgradeTo')} ${currentTier.name}`,
-        };
-      }
-      const monthlySavings = Math.round((tierPricing.monthlyPrice! * 12 - tierPricing.yearlyPrice) * 100) / 100;
-      const savingsPercent = Math.round((monthlySavings / (tierPricing.monthlyPrice! * 12)) * 100);
-      return {
-        price: `$${tierPricing.yearlyPrice}/yr`,
-        period: `$${tierPricing.monthlyEquivalent}${t('membership.monthlyPrice')} (${t('membership.savingsPercent')} ${savingsPercent}%)`,
-        buttonText: `${t('membership.upgradeTo')} ${currentTier.name}`,
-      };
-    }
-  };
-
-  const pricing = getPricing();
-
   const handleUpgrade = () => {
     // TODO: Implement purchase flow
     alert(`Upgrade to ${currentTier.name} coming soon!`);
   };
+
+  const getPriceDisplay = () => {
+    if (selectedTier === 'vip') {
+      return {
+        price: t('membership.vip.price'),
+        period: t('membership.vip.priceNote'),
+        note: t('membership.contactSalesDesc'),
+        isVIP: true,
+      };
+    }
+
+    if (selectedTier === 'pro') {
+      const price = billingCycle === 'monthly' 
+        ? t('membership.pro.monthlyPrice')
+        : t('membership.pro.annualPrice');
+      const period = billingCycle === 'monthly'
+        ? t('membership.perMonth')
+        : t('membership.perYear');
+      const note = billingCycle === 'annual'
+        ? t('membership.pro.annualPriceNote')
+        : '';
+      return { price, period, note, isVIP: false };
+    }
+
+    // Ultimate
+    const price = billingCycle === 'monthly'
+      ? t('membership.ultimate.monthlyPrice')
+      : t('membership.ultimate.annualPrice');
+    const period = billingCycle === 'monthly'
+      ? t('membership.perMonth')
+      : t('membership.perYear');
+    const note = billingCycle === 'annual'
+      ? t('membership.ultimate.annualPriceNote')
+      : '';
+    return { price, period, note, isVIP: false };
+  };
+
+  const priceDisplay = getPriceDisplay();
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#0B0B0F' }}>
@@ -287,67 +267,10 @@ export default function MembershipScreen({ navigation }: MembershipScreenProps) 
           })}
         </View>
 
-        {/* Billing Cycle Toggle */}
-        <View style={{ marginBottom: 24 }}>
-          <Text style={{ fontSize: 14, fontWeight: '600', color: '#FFFFFF', marginBottom: 12 }}>
-            {t('membership.billingCycle')}
-          </Text>
-          <View style={{ flexDirection: 'row', gap: 12 }}>
-            <TouchableOpacity
-              onPress={() => !isVIP && setBillingCycle('monthly')}
-              disabled={isVIP}
-              style={{
-                flex: 1,
-                paddingVertical: 12,
-                paddingHorizontal: 16,
-                borderRadius: 8,
-                backgroundColor: billingCycle === 'monthly'
-                  ? currentTier.color
-                  : 'rgba(255, 255, 255, 0.05)',
-                alignItems: 'center',
-                opacity: isVIP ? 0.5 : 1,
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: '600',
-                  color: billingCycle === 'monthly' ? '#FFFFFF' : '#999999',
-                }}
-              >
-                {t('membership.monthly')}
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => setBillingCycle('yearly')}
-              style={{
-                flex: 1,
-                paddingVertical: 12,
-                paddingHorizontal: 16,
-                borderRadius: 8,
-                backgroundColor: billingCycle === 'yearly'
-                  ? currentTier.color
-                  : 'rgba(255, 255, 255, 0.05)',
-                alignItems: 'center',
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: '600',
-                  color: billingCycle === 'yearly' ? '#FFFFFF' : '#999999',
-                }}
-              >
-                {t('membership.yearly')}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
         {/* Price Section */}
         <View
           style={{
-            backgroundColor: 'rgba(139, 92, 246, 0.1)',
+            backgroundColor: priceDisplay.isVIP ? 'rgba(245, 158, 11, 0.1)' : 'rgba(139, 92, 246, 0.1)',
             borderRadius: 12,
             padding: 20,
             marginBottom: 24,
@@ -355,25 +278,90 @@ export default function MembershipScreen({ navigation }: MembershipScreenProps) 
             borderColor: currentTier.color,
           }}
         >
-          <Text
-            style={{
-              fontSize: 32,
-              fontWeight: '700',
-              color: currentTier.color,
-              marginBottom: 4,
-            }}
-          >
-            {pricing.price}
-          </Text>
-          <Text
-            style={{
-              fontSize: 14,
-              color: '#999999',
-              marginBottom: 16,
-            }}
-          >
-            {pricing.period}
-          </Text>
+          {/* Price Header with Billing Cycle Toggle */}
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+            {/* Price Display */}
+            <View>
+              <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 4, marginBottom: 8 }}>
+                <Text
+                  style={{
+                    fontSize: 32,
+                    fontWeight: '700',
+                    color: currentTier.color,
+                  }}
+                >
+                  {priceDisplay.price}
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    color: '#999999',
+                  }}
+                >
+                  {priceDisplay.period}
+                </Text>
+              </View>
+              
+              {priceDisplay.note && (
+                <Text
+                  style={{
+                    fontSize: 12,
+                    color: '#999999',
+                  }}
+                >
+                  {priceDisplay.note}
+                </Text>
+              )}
+            </View>
+
+            {/* Billing Cycle Toggle - Right Side */}
+            {selectedTier !== 'vip' && (
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <TouchableOpacity
+                  onPress={() => setBillingCycle('monthly')}
+                  style={{
+                    paddingVertical: 8,
+                    paddingHorizontal: 12,
+                    borderRadius: 6,
+                    backgroundColor: billingCycle === 'monthly' ? '#8B5CF6' : 'rgba(255, 255, 255, 0.05)',
+                    borderWidth: billingCycle === 'monthly' ? 0 : 1,
+                    borderColor: '#333333',
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 11,
+                      fontWeight: '600',
+                      color: billingCycle === 'monthly' ? '#FFFFFF' : '#999999',
+                    }}
+                  >
+                    {t('membership.monthly')}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => setBillingCycle('annual')}
+                  style={{
+                    paddingVertical: 8,
+                    paddingHorizontal: 12,
+                    borderRadius: 6,
+                    backgroundColor: billingCycle === 'annual' ? '#8B5CF6' : 'rgba(255, 255, 255, 0.05)',
+                    borderWidth: billingCycle === 'annual' ? 0 : 1,
+                    borderColor: '#333333',
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 11,
+                      fontWeight: '600',
+                      color: billingCycle === 'annual' ? '#FFFFFF' : '#999999',
+                    }}
+                  >
+                    {t('membership.annual')}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
 
           <TouchableOpacity
             onPress={handleUpgrade}
@@ -391,7 +379,7 @@ export default function MembershipScreen({ navigation }: MembershipScreenProps) 
                 color: '#FFFFFF',
               }}
             >
-              {pricing.buttonText}
+              {selectedTier === 'vip' ? t('membership.contactSales') : `${t('membership.upgradeTo')} ${currentTier.name.split(' ')[1]}`}
             </Text>
           </TouchableOpacity>
         </View>

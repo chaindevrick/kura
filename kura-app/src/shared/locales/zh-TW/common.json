@@ -111,35 +111,37 @@
   "membership": {
     "title": "會員",
     "manageYourPlan": "管理您的方案",
-    "billedMonthly": "按月結算",
-    "billedYearly": "按年結算",
+    "billedMonthly": "按月結算。隨時取消。",
     "upgradeTo": "升級至",
     "currentPlan": "目前方案",
-    "unlockFeatures": "升級以解鎖高級功能",
-    "billingCycle": "計費周期",
+    "unlockFeatures": "解鎖高級功能",
+    "billingCycle": "帳單週期",
     "monthly": "月繳",
-    "yearly": "年繳",
-    "savingsPercent": "節省",
-    "monthlyPrice": "$/月",
+    "annual": "年繳",
+    "savingsLabel": "節省 {{percent}}%",
+    "perMonth": "/月",
+    "perYear": "/年",
+    "contactSales": "聯絡銷售",
+    "contactSalesDesc": "根據您的需求獲取自訂價格",
     "pro": {
-      "name": "進階",
+      "name": "Kura Pro",
       "description": "進階方案",
-      "monthlyPrice": 5.99,
-      "yearlyPrice": 59.99,
-      "monthlyEquivalent": 4.99
+      "monthlyPrice": "$5.99",
+      "annualPrice": "$59.99",
+      "annualPriceNote": "相當於每月 $4.99"
     },
     "ultimate": {
-      "name": "旗艦",
+      "name": "Kura Ultimate",
       "description": "旗艦方案",
-      "monthlyPrice": 14.99,
-      "yearlyPrice": 149.99,
-      "monthlyEquivalent": 12.49
+      "monthlyPrice": "$14.99",
+      "annualPrice": "$149.99",
+      "annualPriceNote": "相當於每月 $12.49"
     },
     "vip": {
-      "name": "專屬",
+      "name": "Kura VIP",
       "description": "專屬方案",
-      "yearlyPrice": 499.99,
-      "monthlyEquivalent": 41.66
+      "price": "$499.99+",
+      "priceNote": "/年起"
     },
     "features": "功能",
     "connections": "無限連線",

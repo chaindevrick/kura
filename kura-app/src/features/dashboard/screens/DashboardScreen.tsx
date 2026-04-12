@@ -61,7 +61,7 @@ export default function DashboardScreen() {
           />
         }
       >
-        <View style={{ marginTop: 30 }}>
+        <View style={{ marginTop: 40 }}>
           <AccountsList 
             accounts={accounts}
             selectedAccountId={selectedAccountId}
@@ -71,7 +71,7 @@ export default function DashboardScreen() {
         </View>
         
         {/* 交易容器 - 在 ScrollView 內部，可跟隨滾動 */}
-        <View style={{ marginTop: 40 }}>
+        <View style={{ marginTop: 16 }}>
           <ActivityContainer 
             transactions={displayTransactions}
             transactionHeader={transactionHeader}
@@ -86,7 +86,7 @@ export default function DashboardScreen() {
           activeOpacity={0.8}
           style={{
             marginHorizontal: 24,
-            marginTop: 10,
+            marginTop: 16,
             marginBottom: 32,
             paddingHorizontal: 20,
             paddingVertical: 20,
@@ -105,6 +105,9 @@ export default function DashboardScreen() {
           </View>
           <Text style={{ fontSize: 24, color: '#8B5CF6' }}>→</Text>
         </TouchableOpacity>
+
+        {/* 為 TabNavigator 留空白 */}
+        <View style={{ height: 100 }} />
       </ScrollView>
 
       {/* Transactions Detail Modal */}

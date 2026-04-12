@@ -108,7 +108,6 @@ export default function InvestmentScreen() {
     <View style={{ flex: 1, backgroundColor: '#0B0B0F' }}>
       <ScrollView 
         style={{ flex: 1 }} 
-        contentContainerStyle={{ paddingBottom: 32 }} 
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -151,6 +150,9 @@ export default function InvestmentScreen() {
           investments={displayedInvestments} 
           selectedAccountId={selectedAccountId}
         />
+
+        {/* 為 TabNavigator 留空白 */}
+        <View style={{ height: 100 }} />
       </ScrollView>
 
       {/* Connect Account Modal */}
