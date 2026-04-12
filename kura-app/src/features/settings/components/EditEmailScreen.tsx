@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, TextInput, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppStore } from '../../../shared/store/useAppStore';
+import { useAppTranslation } from '../../../shared/hooks/useAppTranslation';
 import Logger from '../../../shared/utils/Logger';
 import VerifyEmailChangeScreen from './VerifyEmailChangeScreen';
 
@@ -10,6 +11,7 @@ interface EditEmailScreenProps {
 }
 
 export default function EditEmailScreen({ onClose }: EditEmailScreenProps) {
+  const { t } = useAppTranslation();
   const userProfile = useAppStore((state) => state.userProfile);
   const requestEmailChange = useAppStore((state) => state.requestEmailChange);
   const [email, setEmailState] = useState(userProfile.email);
@@ -18,14 +20,14 @@ export default function EditEmailScreen({ onClose }: EditEmailScreenProps) {
 
   const handleSave = async () => {
     if (!email.trim()) {
-      Alert.alert('Error', 'Email cannot be empty');
+      Alert.alert('Error', t('settings.emailEmpty'));
       return;
     }
 
     // Simple email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      Alert.alert('Error', 'Please enter a valid email address');
+      Alert.alert('Error', t('settings.invalidEmailFormat'));
       return;
     }
 
@@ -47,7 +49,7 @@ export default function EditEmailScreen({ onClose }: EditEmailScreenProps) {
       });
     } catch (error) {
       Logger.error('EditEmailScreen', 'Failed to request email change', error);
-      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to request email change');
+      Alert.alert('Error', error instanceof Error ? error.message : t('settings.failedRequestEmailChange'));
     } finally {
       setIsLoading(false);
     }
@@ -69,19 +71,19 @@ export default function EditEmailScreen({ onClose }: EditEmailScreenProps) {
       <ScrollView style={{ flex: 1, paddingTop: 64, paddingHorizontal: 24 }} contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
-          <Text style={{ color: '#FFFFFF', fontSize: 20, fontWeight: 'bold' }}>Edit Email</Text>
+          <Text style={{ color: '#FFFFFF', fontSize: 20, fontWeight: 'bold' }}>{t('settings.editEmail')}</Text>
           <TouchableOpacity onPress={onClose} style={{ width: 32, height: 32, backgroundColor: '#1A1A24', borderRadius: 16, alignItems: 'center', justifyContent: 'center' }}>
             <Ionicons name="close" size={20} color="#9CA3AF" />
           </TouchableOpacity>
         </View>
 
         {/* Form */}
-        <Text style={{ color: '#999999', fontSize: 12, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.3, marginBottom: 16 }}>Email Address</Text>
+        <Text style={{ color: '#999999', fontSize: 12, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.3, marginBottom: 16 }}>{t('settings.emailAddress')}</Text>
         
         <TextInput
           value={email}
           onChangeText={setEmailState}
-          placeholder="Enter your new email"
+          placeholder={t('settings.enterNewEmail')}
           placeholderTextColor="#666666"
           keyboardType="email-address"
           autoCapitalize="none"
@@ -97,10 +99,10 @@ export default function EditEmailScreen({ onClose }: EditEmailScreenProps) {
           {isLoading ? (
             <>
               <ActivityIndicator color="#FFFFFF" size="small" />
-              <Text style={{ color: '#FFFFFF', fontWeight: 'bold', fontSize: 16 }}>Sending...</Text>
+              <Text style={{ color: '#FFFFFF', fontWeight: 'bold', fontSize: 16 }}>{t('settings.sending')}</Text>
             </>
           ) : (
-            <Text style={{ color: '#FFFFFF', fontWeight: 'bold', fontSize: 16 }}>Send Verification Code</Text>
+            <Text style={{ color: '#FFFFFF', fontWeight: 'bold', fontSize: 16 }}>{t('settings.sendVerification')}</Text>
           )}
         </TouchableOpacity>
       </ScrollView>

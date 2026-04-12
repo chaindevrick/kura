@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFinanceStore } from '../../../shared/store/useFinanceStore';
 import { useAppStore } from '../../../shared/store/useAppStore';
+import { useAppTranslation } from '../../../shared/hooks/useAppTranslation';
 import ConnectAccountModal from '../../../shared/components/ConnectAccountModal';
 import PlaidLinkModal from '../../../shared/components/PlaidLinkModal';
 import ExchangeLinkModal from '../../../shared/components/ExchangeLinkModal';
@@ -41,6 +42,7 @@ export default function ConnectedAccountsScreen({ onClose }: ConnectedAccountsSc
   const [showConnectModal, setShowConnectModal] = useState(false);
   const [showPlaidModal, setShowPlaidModal] = useState(false);
   const [showExchangeModal, setShowExchangeModal] = useState(false);
+  const { t } = useAppTranslation();
   const accounts = useFinanceStore((state) => state.accounts);
   const investmentAccounts = useFinanceStore((state) => state.investmentAccounts);
   const exchangeAccounts = useFinanceStore((state) => state.exchangeAccounts);
@@ -81,6 +83,7 @@ export default function ConnectedAccountsScreen({ onClose }: ConnectedAccountsSc
       category: 'Exchange',
       typeLabel: getAccountTypeLabel(acc.exchange),
       icon: getAccountIcon('Exchange'),
+      logo: '',
     })),
   ];
 
@@ -89,7 +92,7 @@ export default function ConnectedAccountsScreen({ onClose }: ConnectedAccountsSc
       <ScrollView style={{ flex: 1, paddingTop: 64, paddingHorizontal: 24 }} contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
-          <Text style={{ color: '#FFFFFF', fontSize: 20, fontWeight: 'bold' }}>Connected Accounts</Text>
+          <Text style={{ color: '#FFFFFF', fontSize: 20, fontWeight: 'bold' }}>{t('settings.connectedAccounts')}</Text>
           <TouchableOpacity onPress={onClose} style={{ width: 32, height: 32, backgroundColor: '#1A1A24', borderRadius: 16, alignItems: 'center', justifyContent: 'center' }}>
             <Ionicons name="close" size={20} color="#9CA3AF" />
           </TouchableOpacity>
@@ -129,12 +132,12 @@ export default function ConnectedAccountsScreen({ onClose }: ConnectedAccountsSc
         ) : (
           <View style={{ paddingVertical: 40, alignItems: 'center' }}>
             <Ionicons name="wallet-outline" size={48} color="#666666" />
-            <Text style={{ color: '#999999', fontSize: 16, marginTop: 16 }}>No connected accounts</Text>
+            <Text style={{ color: '#999999', fontSize: 16, marginTop: 16 }}>{t('settings.noConnectedAccounts')}</Text>
           </View>
         )}
 
         {/* Add Account Section */}
-        <Text style={{ color: '#999999', fontSize: 12, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.3, marginTop: 32, marginBottom: 16 }}>Connect a New Account</Text>
+        <Text style={{ color: '#999999', fontSize: 12, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.3, marginTop: 32, marginBottom: 16 }}>{t('settings.connectNewAccount')}</Text>
 
         <TouchableOpacity
           onPress={() => setShowConnectModal(true)}
@@ -145,8 +148,8 @@ export default function ConnectedAccountsScreen({ onClose }: ConnectedAccountsSc
               <Ionicons name="add" size={24} color="#8B5CF6" />
             </View>
             <View>
-              <Text style={{ color: '#8B5CF6', fontWeight: '500', fontSize: 16 }}>Connect Account</Text>
-              <Text style={{ color: '#999999', fontSize: 12, marginTop: 4 }}>Plaid or Web3 Wallet</Text>
+              <Text style={{ color: '#8B5CF6', fontWeight: '500', fontSize: 16 }}>{t('settings.connectAccount')}</Text>
+              <Text style={{ color: '#999999', fontSize: 12, marginTop: 4 }}>{t('settings.plaidOrWeb3')}</Text>
             </View>
           </View>
           <Ionicons name="chevron-forward" size={20} color="#8B5CF6" />

@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppStore } from '../../../shared/store/useAppStore';
+import { useAppTranslation } from '../../../shared/hooks/useAppTranslation';
 
 interface EditDisplayNameScreenProps {
   onClose: () => void;
 }
 
 export default function EditDisplayNameScreen({ onClose }: EditDisplayNameScreenProps) {
+  const { t } = useAppTranslation();
   const userProfile = useAppStore((state) => state.userProfile);
   const setDisplayName = useAppStore((state) => state.setDisplayName);
   const [displayName, setDisplayNameLocal] = useState(userProfile.displayName);
@@ -15,7 +17,7 @@ export default function EditDisplayNameScreen({ onClose }: EditDisplayNameScreen
 
   const handleSave = async () => {
     if (!displayName.trim()) {
-      Alert.alert('Error', 'Display name cannot be empty');
+      Alert.alert('Error', t('settings.displayNameEmpty'));
       return;
     }
 
@@ -27,10 +29,10 @@ export default function EditDisplayNameScreen({ onClose }: EditDisplayNameScreen
     try {
       setIsLoading(true);
       await setDisplayName(displayName);
-      Alert.alert('Success', 'Display name updated successfully');
+      Alert.alert('Success', t('settings.displayNameUpdated'));
       onClose();
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to update display name';
+      const errorMessage = error instanceof Error ? error.message : t('settings.failedUpdateDisplay');
       Alert.alert('Error', errorMessage);
     } finally {
       setIsLoading(false);
@@ -42,19 +44,19 @@ export default function EditDisplayNameScreen({ onClose }: EditDisplayNameScreen
       <ScrollView style={{ flex: 1, paddingTop: 64, paddingHorizontal: 24 }} contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
-          <Text style={{ color: '#FFFFFF', fontSize: 20, fontWeight: 'bold' }}>Edit Display Name</Text>
+          <Text style={{ color: '#FFFFFF', fontSize: 20, fontWeight: 'bold' }}>{t('settings.editDisplayName')}</Text>
           <TouchableOpacity onPress={onClose} style={{ width: 32, height: 32, backgroundColor: '#1A1A24', borderRadius: 16, alignItems: 'center', justifyContent: 'center' }}>
             <Ionicons name="close" size={20} color="#9CA3AF" />
           </TouchableOpacity>
         </View>
 
         {/* Form */}
-        <Text style={{ color: '#999999', fontSize: 12, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.3, marginBottom: 16 }}>Display Name</Text>
+        <Text style={{ color: '#999999', fontSize: 12, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.3, marginBottom: 16 }}>{t('settings.displayName')}</Text>
         
         <TextInput
           value={displayName}
           onChangeText={setDisplayNameLocal}
-          placeholder="Enter your display name"
+          placeholder={t('settings.enterDisplayName')}
           placeholderTextColor="#666666"
           editable={!isLoading}
           style={{ backgroundColor: '#1A1A24', borderWidth: 1, borderColor: 'rgba(139, 92, 246, 0.2)', borderRadius: 12, color: '#FFFFFF', padding: 16, fontSize: 16, marginBottom: 32, opacity: isLoading ? 0.5 : 1 }}
@@ -68,7 +70,7 @@ export default function EditDisplayNameScreen({ onClose }: EditDisplayNameScreen
         >
           {isLoading && <ActivityIndicator color="#FFFFFF" style={{ marginRight: 8 }} />}
           <Text style={{ color: '#FFFFFF', fontWeight: 'bold', fontSize: 16 }}>
-            {isLoading ? 'Saving...' : 'Save Changes'}
+            {isLoading ? t('settings.saving') : t('settings.saveChanges')}
           </Text>
         </TouchableOpacity>
       </ScrollView>

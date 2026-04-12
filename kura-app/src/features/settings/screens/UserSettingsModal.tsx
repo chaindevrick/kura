@@ -274,33 +274,103 @@ export default function UserSettingsModal({ isVisible, onClose }: UserSettingsMo
             </View>
 
             <SectionHeader title={t('settings.advanced')} />
-            {/* Membership Tier Button */}
-            <View style={{ marginBottom: 32 }}>
-              <TouchableOpacity
-                onPress={() => setShowMembership(true)}
-                style={{
-                  paddingVertical: 16,
-                  paddingHorizontal: 16,
-                  backgroundColor: 'rgba(139, 92, 246, 0.1)',
-                  borderRadius: 12,
-                  borderWidth: 1,
-                  borderColor: '#8B5CF6',
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                }}
-              >
-                <View style={{ flex: 1 }}>
-                  <Text style={{ color: '#8B5CF6', fontSize: 14, fontWeight: '600', marginBottom: 4 }}>
-                    {userProfile.membershipLabel || 'Free'}
-                  </Text>
-                  <Text style={{ color: '#999999', fontSize: 12 }}>
-                    {t('membership.unlockFeatures')}
-                  </Text>
+            
+            {/* Helper functions for membership tier display */}
+            {(() => {
+              // Normalize current membership tier label
+              const getMembershipTierFromLabel = (label: string): string => {
+                if (!label) return 'basic';
+                const normalizedLabel = label.toLowerCase();
+                if (normalizedLabel.includes('vip')) return 'vip';
+                if (normalizedLabel.includes('ultimate')) return 'ultimate';
+                if (normalizedLabel.includes('pro')) return 'pro';
+                return 'basic';
+              };
+
+              // Get member name based on tier
+              const getMemberName = (tier: string): string => {
+                switch(tier) {
+                  case 'pro': return t('membership.proMember') || 'Pro Member';
+                  case 'ultimate': return t('membership.ultimateMember') || 'Ultimate Member';
+                  case 'vip': return t('membership.vipMember') || 'VIP Member';
+                  default: return t('membership.basicMember') || 'Basic Member';
+                }
+              };
+
+              // Get current tier features name (not next tier)
+              const getCurrentTierFeatureName = (tier: string): string => {
+                switch(tier) {
+                  case 'pro': return t('membership.proFeatures') || 'Pro Features';
+                  case 'ultimate': return t('membership.ultimateFeatures') || 'Ultimate Features';
+                  case 'vip': return t('membership.vipFeatures') || 'VIP Features';
+                  default: return '';
+                }
+              };
+
+              const currentTier = getMembershipTierFromLabel(userProfile.membershipLabel);
+              const memberName = getMemberName(currentTier);
+              const tierFeatures = getCurrentTierFeatureName(currentTier);
+              const shouldShowUpgradeButton = currentTier !== 'basic';
+
+              return (
+                <View style={{ marginBottom: 32 }}>
+                  {/* Current Membership Button */}
+                  <TouchableOpacity
+                    onPress={() => setShowMembership(true)}
+                    style={{
+                      paddingVertical: 16,
+                      paddingHorizontal: 16,
+                      backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                      borderRadius: 12,
+                      borderWidth: 1,
+                      borderColor: '#8B5CF6',
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      marginBottom: 8,
+                    }}
+                  >
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: '#8B5CF6', fontSize: 14, fontWeight: '600', marginBottom: 4 }}>
+                        {memberName}
+                      </Text>
+                      <Text style={{ color: '#999999', fontSize: 12 }}>
+                        {t('membership.manageYourPlan')}
+                      </Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={20} color="#8B5CF6" />
+                  </TouchableOpacity>
+
+                  {/* Tier Features Button (Only show if not Basic) */}
+                  {shouldShowUpgradeButton && (
+                    <TouchableOpacity
+                      onPress={() => setShowMembership(true)}
+                      style={{
+                        paddingVertical: 16,
+                        paddingHorizontal: 16,
+                        backgroundColor: '#1A1A24',
+                        borderRadius: 12,
+                        borderWidth: 1,
+                        borderColor: 'rgba(139, 92, 246, 0.2)',
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ color: '#FFFFFF', fontSize: 14, fontWeight: '600', marginBottom: 4 }}>
+                          {tierFeatures}
+                        </Text>
+                        <Text style={{ color: '#999999', fontSize: 12 }}>
+                          {t('membership.learnMore')}
+                        </Text>
+                      </View>
+                      <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+                    </TouchableOpacity>
+                  )}
                 </View>
-                <Ionicons name="chevron-forward" size={20} color="#8B5CF6" />
-              </TouchableOpacity>
-            </View>
+              );
+            })()}
 
             {authStatus === 'authenticated' && (
               <SignOutButton onPress={handleSignOut} />

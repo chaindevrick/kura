@@ -148,7 +148,7 @@ export default function ResetPasswordScreen({ onClose }: ResetPasswordScreenProp
         {step === 'email' && (
           <>
             <Text style={{ color: '#999999', fontSize: 14, marginBottom: 24 }}>
-              Enter your email address to receive a verification code. We'll send it to help you reset your password.
+              Enter your email address to receive a verification code. We&rsquo;ll send it to help you reset your password.
             </Text>
 
             <Text style={{ color: '#999999', fontSize: 12, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.3, marginBottom: 16 }}>
@@ -273,7 +273,7 @@ export default function ResetPasswordScreen({ onClose }: ResetPasswordScreenProp
         {step === 'password' && (
           <>
             <Text style={{ color: '#999999', fontSize: 14, marginBottom: 24 }}>
-              Enter your new password. Make sure it's at least 8 characters long.
+              Enter your new password. Make sure it&rsquo;s at least 8 characters long.
             </Text>
 
             <Text style={{ color: '#999999', fontSize: 12, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.3, marginBottom: 16 }}>

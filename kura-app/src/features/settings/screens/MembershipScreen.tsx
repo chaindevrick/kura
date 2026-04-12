@@ -10,7 +10,7 @@ import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context'
 import { useAppTranslation } from '../../../shared/hooks/useAppTranslation';
 import { useAppStore } from '../../../shared/store/useAppStore';
 
-type MembershipTier = 'pro' | 'ultimate' | 'vip';
+type MembershipTier = 'basic' | 'pro' | 'ultimate' | 'vip';
 
 interface TierFeature {
   icon: string;
@@ -26,40 +26,52 @@ interface TierData {
 }
 
 const MEMBERSHIP_TIERS: Record<MembershipTier, TierData> = {
+  basic: {
+    name: 'Basic',
+    price: 'membership.basic.name',
+    color: '#10B981',
+    features: [
+      {
+        icon: 'link',
+        name: 'membership.basic.unlimitedConnections',
+        description: 'membership.basic.unlimitedConnectionsDesc',
+      },
+      {
+        icon: 'trending-up',
+        name: 'membership.basic.netWorth',
+        description: 'membership.basic.netWorthDesc',
+      },
+      {
+        icon: 'calendar',
+        name: 'membership.basic.thirtyDayHistory',
+        description: 'membership.basic.thirtyDayHistoryDesc',
+      },
+    ],
+  },
   pro: {
     name: 'Pro',
     price: 'membership.pro.name',
     color: '#3B82F6',
     features: [
       {
-        icon: 'link',
-        name: 'membership.connections',
-        description: 'membership.connectionsDesc',
+        icon: 'alert-circle',
+        name: 'membership.pro.crossDomainAlerts',
+        description: 'membership.pro.crossDomainAlertsDesc',
       },
       {
-        icon: 'calendar',
-        name: 'membership.history',
-        description: 'membership.historyDesc',
+        icon: 'document-text',
+        name: 'membership.pro.taxExport',
+        description: 'membership.pro.taxExportDesc',
+      },
+      {
+        icon: 'infinite',
+        name: 'membership.pro.permanentHistory',
+        description: 'membership.pro.permanentHistoryDesc',
       },
       {
         icon: 'sync',
-        name: 'membership.syncEvery6Hours',
-        description: 'membership.syncEvery6HoursDesc',
-      },
-      {
-        icon: 'trending-up',
-        name: 'membership.netWorthChart',
-        description: 'membership.netWorthChartDesc',
-      },
-      {
-        icon: 'notifications',
-        name: 'membership.basicNotifications',
-        description: 'membership.basicNotificationsDesc',
-      },
-      {
-        icon: 'download',
-        name: 'membership.csvExport',
-        description: 'membership.csvExportDesc',
+        name: 'membership.pro.advancedSync',
+        description: 'membership.pro.advancedSyncDesc',
       },
     ],
   },
@@ -69,34 +81,19 @@ const MEMBERSHIP_TIERS: Record<MembershipTier, TierData> = {
     color: '#8B5CF6',
     features: [
       {
-        icon: 'link',
-        name: 'membership.connections',
-        description: 'membership.connectionsDesc',
-      },
-      {
-        icon: 'calendar',
-        name: 'membership.history',
-        description: 'membership.historyDesc',
-      },
-      {
-        icon: 'sync',
-        name: 'membership.syncEveryHour',
-        description: 'membership.syncEveryHourDesc',
-      },
-      {
-        icon: 'calculator',
-        name: 'membership.defiAnalytics',
-        description: 'membership.defiAnalyticsDesc',
+        icon: 'layers',
+        name: 'membership.ultimate.defiAnalytics',
+        description: 'membership.ultimate.defiAnalyticsDesc',
       },
       {
         icon: 'notifications',
-        name: 'membership.smartAlerts',
-        description: 'membership.smartAlertsDesc',
+        name: 'membership.ultimate.realTimeAlerts',
+        description: 'membership.ultimate.realTimeAlertsDesc',
       },
       {
-        icon: 'document-text',
-        name: 'membership.taxExport',
-        description: 'membership.taxExportDesc',
+        icon: 'flash',
+        name: 'membership.ultimate.highFreqSync',
+        description: 'membership.ultimate.highFreqSyncDesc',
       },
     ],
   },
@@ -106,34 +103,14 @@ const MEMBERSHIP_TIERS: Record<MembershipTier, TierData> = {
     color: '#F59E0B',
     features: [
       {
-        icon: 'link',
-        name: 'membership.connections',
-        description: 'membership.connectionsDesc',
-      },
-      {
-        icon: 'calendar',
-        name: 'membership.history',
-        description: 'membership.historyDesc',
-      },
-      {
-        icon: 'flash',
-        name: 'membership.syncRealTime',
-        description: 'membership.syncRealTimeDesc',
-      },
-      {
-        icon: 'pricetag',
-        name: 'membership.customTags',
-        description: 'membership.customTagsDesc',
-      },
-      {
-        icon: 'call',
-        name: 'membership.prioritySupport',
-        description: 'membership.prioritySupportDesc',
+        icon: 'server',
+        name: 'membership.vip.customNode',
+        description: 'membership.vip.customNodeDesc',
       },
       {
         icon: 'code',
-        name: 'membership.webhooksAPI',
-        description: 'membership.webhooksAPIDesc',
+        name: 'membership.vip.developerApi',
+        description: 'membership.vip.developerApiDesc',
       },
     ],
   },
@@ -144,20 +121,71 @@ interface MembershipScreenProps {
 }
 
 export default function MembershipScreen({ navigation }: MembershipScreenProps) {
-  const [selectedTier, setSelectedTier] = useState<MembershipTier>('ultimate');
-  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
   const insets = useSafeAreaInsets();
   const { t } = useAppTranslation();
   const userProfile = useAppStore((state) => state.userProfile);
 
+  // Get current membership tier from Store and normalize it
+  const getMembershipTierFromLabel = (label: string): MembershipTier => {
+    if (!label) return 'basic';
+    
+    const normalizedLabel = label.toLowerCase();
+    
+    // Handle different label formats
+    if (normalizedLabel.includes('basic')) return 'basic';
+    if (normalizedLabel.includes('pro')) return 'pro';
+    if (normalizedLabel.includes('ultimate')) return 'ultimate';
+    if (normalizedLabel.includes('vip')) return 'vip';
+    
+    return 'basic'; // fallback
+  };
+
+  const currentMembershipTier = getMembershipTierFromLabel(userProfile.membershipLabel);
+
+  // Initialize selected tier to current membership tier
+  const [selectedTier, setSelectedTier] = useState<MembershipTier>(currentMembershipTier);
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
+
   const currentTier = MEMBERSHIP_TIERS[selectedTier];
 
   const handleUpgrade = () => {
-    // TODO: Implement purchase flow
-    alert(`Upgrade to ${currentTier.name} coming soon!`);
+    // Special handling for VIP
+    if (selectedTier === 'vip') {
+      alert(t('membership.contactSalesDesc') || 'Please contact our sales team for VIP pricing');
+      return;
+    }
+    
+    // TODO: Implement purchase flow for other tiers
+    alert(`${getButtonText()} coming soon!`);
+  };
+
+  // Get button text based on user's current tier vs selected tier
+  const getButtonText = () => {
+    // Define tier hierarchy (lower index = lower tier)
+    const tierHierarchy = ['basic', 'pro', 'ultimate', 'vip'];
+    
+    const selectedTierIndex = tierHierarchy.indexOf(selectedTier);
+    const currentTierIndex = tierHierarchy.indexOf(currentMembershipTier);
+
+    if (selectedTierIndex === currentTierIndex) {
+      return t('membership.currentPlan') || 'Current Plan';
+    } else if (selectedTierIndex > currentTierIndex) {
+      return `${t('membership.upgradeTo')} ${currentTier.name}`;
+    } else {
+      return `${t('membership.downgradeTo')} ${currentTier.name}`;
+    }
   };
 
   const getPriceDisplay = () => {
+    if (selectedTier === 'basic') {
+      return {
+        price: t('membership.basic.price') || '免費',
+        period: '',
+        note: '',
+        isBasic: true,
+      };
+    }
+
     if (selectedTier === 'vip') {
       return {
         price: t('membership.vip.price'),
@@ -232,7 +260,7 @@ export default function MembershipScreen({ navigation }: MembershipScreenProps) 
       >
         {/* Tier Selection */}
         <View style={{ flexDirection: 'row', gap: 12, marginBottom: 24 }}>
-          {(['pro', 'ultimate', 'vip'] as MembershipTier[]).map((tier) => {
+          {(['basic', 'pro', 'ultimate', 'vip'] as MembershipTier[]).map((tier) => {
             const tierData = MEMBERSHIP_TIERS[tier];
             const isSelected = selectedTier === tier;
 
@@ -246,7 +274,7 @@ export default function MembershipScreen({ navigation }: MembershipScreenProps) 
                   paddingHorizontal: 8,
                   borderRadius: 12,
                   backgroundColor: isSelected
-                    ? 'rgba(139, 92, 246, 0.2)'
+                    ? `${tierData.color}20`
                     : 'rgba(255, 255, 255, 0.05)',
                   borderWidth: isSelected ? 2 : 1,
                   borderColor: isSelected ? tierData.color : '#333333',
@@ -270,7 +298,11 @@ export default function MembershipScreen({ navigation }: MembershipScreenProps) 
         {/* Price Section */}
         <View
           style={{
-            backgroundColor: priceDisplay.isVIP ? 'rgba(245, 158, 11, 0.1)' : 'rgba(139, 92, 246, 0.1)',
+            backgroundColor: priceDisplay.isBasic 
+              ? 'rgba(16, 185, 129, 0.1)' 
+              : priceDisplay.isVIP 
+              ? 'rgba(245, 158, 11, 0.1)' 
+              : 'rgba(139, 92, 246, 0.1)',
             borderRadius: 12,
             padding: 20,
             marginBottom: 24,
@@ -314,8 +346,8 @@ export default function MembershipScreen({ navigation }: MembershipScreenProps) 
               )}
             </View>
 
-            {/* Billing Cycle Toggle - Right Side */}
-            {selectedTier !== 'vip' && (
+            {/* Billing Cycle Toggle - Right Side (only for Pro and Ultimate) */}
+            {selectedTier !== 'basic' && selectedTier !== 'vip' && (
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 <TouchableOpacity
                   onPress={() => setBillingCycle('monthly')}
@@ -379,23 +411,37 @@ export default function MembershipScreen({ navigation }: MembershipScreenProps) 
                 color: '#FFFFFF',
               }}
             >
-              {selectedTier === 'vip' ? t('membership.contactSales') : `${t('membership.upgradeTo')} ${currentTier.name}`}
+              {getButtonText()}
             </Text>
           </TouchableOpacity>
         </View>
 
         {/* Features Section */}
         <View style={{ marginBottom: 32 }}>
-          <Text
-            style={{
-              fontSize: 16,
-              fontWeight: '600',
-              color: '#FFFFFF',
-              marginBottom: 16,
-            }}
-          >
-            {t('membership.features')}
-          </Text>
+          <View style={{ marginBottom: 16 }}>
+            <Text
+              style={{
+                fontSize: 16,
+                fontWeight: '600',
+                color: '#FFFFFF',
+                marginBottom: 4,
+              }}
+            >
+              {t('membership.features')}
+            </Text>
+            {selectedTier !== 'basic' && (
+              <Text
+                style={{
+                  fontSize: 12,
+                  color: '#999999',
+                }}
+              >
+                {selectedTier === 'pro' && t('membership.includesAllBasic')}
+                {selectedTier === 'ultimate' && t('membership.includesAllPro')}
+                {selectedTier === 'vip' && t('membership.includesAllUltimate')}
+              </Text>
+            )}
+          </View>
 
           {currentTier.features.map((feature, index) => (
             <View key={index} style={{ marginBottom: 16, flexDirection: 'row', gap: 12 }}>
@@ -433,45 +479,6 @@ export default function MembershipScreen({ navigation }: MembershipScreenProps) 
               </View>
             </View>
           ))}
-        </View>
-
-        {/* Comparison Table */}
-        <View
-          style={{
-            backgroundColor: 'rgba(255, 255, 255, 0.05)',
-            borderRadius: 12,
-            padding: 16,
-            marginBottom: 24,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 14,
-              fontWeight: '600',
-              color: '#FFFFFF',
-              marginBottom: 12,
-            }}
-          >
-            {t('membership.currentPlan')}
-          </Text>
-          <Text
-            style={{
-              fontSize: 24,
-              fontWeight: '700',
-              color: '#8B5CF6',
-            }}
-          >
-            {userProfile.membershipLabel || 'Free'}
-          </Text>
-          <Text
-            style={{
-              fontSize: 12,
-              color: '#999999',
-              marginTop: 4,
-            }}
-          >
-            {t('membership.unlockFeatures')}
-          </Text>
         </View>
       </ScrollView>
     </SafeAreaView>
