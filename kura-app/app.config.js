@@ -2,7 +2,7 @@ module.exports = {
   expo: {
     name: "Kura",
     slug: "kura-app",
-    version: "0.0.2",
+    version: "0.0.3",
     orientation: "portrait",
     icon: "./assets/icon.png",
     userInterfaceStyle: "light",
@@ -50,7 +50,7 @@ module.exports = {
       package: "com.kurafinance.app",
       adaptiveIcon: {
         foregroundImage: "./assets/adaptive-icon.png",
-        backgroundColor: "#5a2d82",
+        backgroundImage: "./assets/android-background.png",
       },
       edgeToEdgeEnabled: true,
       predictiveBackGestureEnabled: false,

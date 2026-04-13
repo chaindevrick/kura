@@ -22,6 +22,7 @@ import {
   exchangePlaidPublicToken,
   disconnectPlaidAccount as disconnectPlaidAccountApi,
 } from '../api/plaidApi';
+import { disconnectExchangeAccount as disconnectExchangeAccountApi } from '../api/exchangeApi';
 import { fetchExchangeRates, isCacheValid, type ExchangeRates } from '../api/exchangeRateApi';
 import { useFinanceStore } from './useFinanceStore';
 import { type Currency } from '../utils/currencyFormatter';
@@ -105,6 +106,9 @@ interface AppState {
   requestPlaidLinkToken: () => Promise<string | null>;
   confirmPlaidExchange: (publicToken: string, institutionName?: string) => Promise<void>;
   disconnectPlaidAccount: (accountId: string) => Promise<void>;
+  
+  // Exchange methods
+  disconnectExchangeAccount: (exchangeAccountId: string) => Promise<void>;
 }
 
 // Demo data removed - now using real data from backend
@@ -773,6 +777,41 @@ export const useAppStore = create<AppState>((set, get) => ({
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to disconnect Plaid account';
       Logger.error('AppStore', 'Failed to disconnect Plaid account', { error: errorMessage });
+      throw error;
+    }
+  },
+
+  disconnectExchangeAccount: async (exchangeAccountId: string) => {
+    try {
+      const authToken = get().authToken;
+      if (!authToken) {
+        throw new Error('Not authenticated');
+      }
+
+      Logger.debug('AppStore', 'Disconnecting exchange account', { exchangeAccountId });
+
+      await disconnectExchangeAccountApi(exchangeAccountId, authToken);
+      Logger.info('AppStore', 'Exchange account disconnected successfully', { exchangeAccountId });
+
+      // Update store to remove the exchange account
+      const { useExchangeStore } = await import('./useExchangeStore');
+      const removeExchangeAccount = useExchangeStore.getState().removeExchangeAccount;
+      removeExchangeAccount(exchangeAccountId);
+
+      // Also remove from finance store's exchangeAccounts list
+      const { exchangeAccounts } = useFinanceStore.getState();
+      useFinanceStore.setState({
+        exchangeAccounts: exchangeAccounts.filter((acc) => acc.id !== exchangeAccountId),
+      });
+
+      // Record asset snapshot for tracking changes
+      const recordAssetSnapshot = useFinanceStore.getState().recordAssetSnapshot;
+      recordAssetSnapshot();
+
+      Logger.info('AppStore', 'Exchange account removed from stores');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to disconnect exchange account';
+      Logger.error('AppStore', 'Failed to disconnect exchange account', { error: errorMessage });
       throw error;
     }
   },

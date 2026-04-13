@@ -31,7 +31,7 @@ export default function NotificationSettingsScreen() {
 
   useEffect(() => {
     loadSettings();
-  }, []);
+  }, [authToken]);
 
   const loadSettings = async () => {
     if (!authToken) return;

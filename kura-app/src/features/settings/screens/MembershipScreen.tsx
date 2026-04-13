@@ -162,7 +162,7 @@ export default function MembershipScreen({ navigation }: MembershipScreenProps) 
     try {
       setIsPurchasing(true);
 
-      // Special handling for VIP
+      // Special handling for VIP - KEEP THIS PART UNCHANGED
       if (selectedTier === 'vip') {
         Alert.alert(
           'Contact Sales',
@@ -192,121 +192,131 @@ export default function MembershipScreen({ navigation }: MembershipScreenProps) 
         return;
       }
 
-      // Get the product ID for selected tier
-      const productId = currentTier.productId;
-      const tierName = currentTier.name;
-
-      // Get available offerings from RevenueCat
-      // Reference: https://www.revenuecat.com/docs/getting-started/displaying-products
-      const offerings = await Purchases.getOfferings();
-
-      if (!offerings.current) {
-        // Debug: Log all available offerings
-        const allOfferingIds = offerings.all
-          ? Object.values(offerings.all).map((o: any) => o.identifier)
-          : [];
-        console.log('DEBUG: All offerings:', allOfferingIds);
-        throw new Error(
-          'No subscription plans available. Please try again later.'
-        );
-      }
-
-      const offering = offerings.current;
-
-      if (
-        !offering.availablePackages ||
-        offering.availablePackages.length === 0
-      ) {
-        throw new Error('No packages available for purchase');
-      }
-
-      // Debug logging
-      console.log('DEBUG: Looking for productId:', productId);
-      const packageList = (offering.availablePackages || []).map(
-        (pkg: any) => ({
-          identifier: pkg.identifier,
-          displayName: pkg.displayName,
-        })
+      // COMING SOON - Show notification for Pro and Ultimate tiers
+      Alert.alert(
+        'Coming Soon',
+        'This feature is coming soon, please stay tuned!',
+        [{ text: 'OK', onPress: () => setIsPurchasing(false) }]
       );
-      console.log('DEBUG: Available packages:', packageList);
+      return;
 
-      // Find the package matching our product ID
-      const selectedPackage = offering.availablePackages.find(
-        (pkg: any) => pkg.identifier === productId
-      );
+      /* ===== PURCHASE LOGIC COMMENTED OUT - COMING SOON ===== */
+      // // Get the product ID for selected tier
+      // const productId = currentTier.productId;
+      // const tierName = currentTier.name;
 
-      if (!selectedPackage) {
-        const availableIds = (offering.availablePackages || [])
-          .map((pkg: any) => pkg.identifier)
-          .join(', ');
-        throw new Error(
-          `Package ${productId} not found. Available packages: ${availableIds}. Please ensure the product is configured in RevenueCat dashboard.`
-        );
-      }
+      // // Get available offerings from RevenueCat
+      // // Reference: https://www.revenuecat.com/docs/getting-started/displaying-products
+      // const offerings = await Purchases.getOfferings();
 
-      // Show purchase confirmation with pricing
-      // Reference: https://www.revenuecat.com/docs/getting-started/making-purchases
-      const priceString = selectedPackage.product.priceString || 'Check AppStore';
-      Alert.alert(`Subscribe to ${tierName}`, `Price: ${priceString}`, [
-        {
-          text: 'Cancel',
-          onPress: () => setIsPurchasing(false),
-          style: 'cancel',
-        },
-        {
-          text: 'Subscribe',
-          onPress: async () => {
-            try {
-              // Perform the purchase
-              const purchaseResult = await Purchases.purchasePackage(
-                selectedPackage
-              );
+      // if (!offerings.current) {
+      //   // Debug: Log all available offerings
+      //   const allOfferingIds = offerings.all
+      //     ? Object.values(offerings.all).map((o: any) => o.identifier)
+      //     : [];
+      //   console.log('DEBUG: All offerings:', allOfferingIds);
+      //   throw new Error(
+      //     'No subscription plans available. Please try again later.'
+      //   );
+      // }
 
-              // Check if purchase was successful by verifying entitlements
-              const { customerInfo } = purchaseResult;
-              const entitlements = customerInfo.entitlements.active;
+      // const offering = offerings.current;
 
-              // Check if any entitlement is active (indicating successful purchase)
-              if (Object.keys(entitlements).length > 0) {
-                Alert.alert(
-                  'Success',
-                  `Welcome to ${tierName}! Your subscription is now active.`,
-                  [
-                    {
-                      text: 'OK',
-                      onPress: () => {
-                        setIsPurchasing(false);
-                        navigation?.goBack();
-                      },
-                    },
-                  ]
-                );
-              } else {
-                throw new Error(
-                  'Purchase completed but subscription was not activated'
-                );
-              }
-            } catch (purchaseError) {
-              // Handle purchase errors
-              const errorMsg =
-                purchaseError instanceof Error
-                  ? purchaseError.message
-                  : String(purchaseError);
+      // if (
+      //   !offering.availablePackages ||
+      //   offering.availablePackages.length === 0
+      // ) {
+      //   throw new Error('No packages available for purchase');
+      // }
 
-              // Check if user cancelled
-              if (
-                errorMsg.includes('cancelled') ||
-                errorMsg.includes('Cancelled')
-              ) {
-                setIsPurchasing(false);
-                return;
-              }
+      // // Debug logging
+      // console.log('DEBUG: Looking for productId:', productId);
+      // const packageList = (offering.availablePackages || []).map(
+      //   (pkg: any) => ({
+      //     identifier: pkg.identifier,
+      //     displayName: pkg.displayName,
+      //   })
+      // );
+      // console.log('DEBUG: Available packages:', packageList);
 
-              throw purchaseError;
-            }
-          },
-        },
-      ]);
+      // // Find the package matching our product ID
+      // const selectedPackage = offering.availablePackages.find(
+      //   (pkg: any) => pkg.identifier === productId
+      // );
+
+      // if (!selectedPackage) {
+      //   const availableIds = (offering.availablePackages || [])
+      //     .map((pkg: any) => pkg.identifier)
+      //     .join(', ');
+      //   throw new Error(
+      //     `Package ${productId} not found. Available packages: ${availableIds}. Please ensure the product is configured in RevenueCat dashboard.`
+      //   );
+      // }
+
+      // // Show purchase confirmation with pricing
+      // // Reference: https://www.revenuecat.com/docs/getting-started/making-purchases
+      // const priceString = selectedPackage.product.priceString || 'Check AppStore';
+      // Alert.alert(`Subscribe to ${tierName}`, `Price: ${priceString}`, [
+      //   {
+      //     text: 'Cancel',
+      //     onPress: () => setIsPurchasing(false),
+      //     style: 'cancel',
+      //   },
+      //   {
+      //     text: 'Subscribe',
+      //     onPress: async () => {
+      //       try {
+      //         // Perform the purchase
+      //         const purchaseResult = await Purchases.purchasePackage(
+      //           selectedPackage
+      //         );
+
+      //         // Check if purchase was successful by verifying entitlements
+      //         const { customerInfo } = purchaseResult;
+      //         const entitlements = customerInfo.entitlements.active;
+
+      //         // Check if any entitlement is active (indicating successful purchase)
+      //         if (Object.keys(entitlements).length > 0) {
+      //           Alert.alert(
+      //             'Success',
+      //             `Welcome to ${tierName}! Your subscription is now active.`,
+      //             [
+      //               {
+      //                 text: 'OK',
+      //                 onPress: () => {
+      //                   setIsPurchasing(false);
+      //                   navigation?.goBack();
+      //                 },
+      //               },
+      //             ]
+      //           );
+      //         } else {
+      //           throw new Error(
+      //             'Purchase completed but subscription was not activated'
+      //           );
+      //         }
+      //       } catch (purchaseError) {
+      //         // Handle purchase errors
+      //         const errorMsg =
+      //           purchaseError instanceof Error
+      //             ? purchaseError.message
+      //             : String(purchaseError);
+
+      //         // Check if user cancelled
+      //         if (
+      //           errorMsg.includes('cancelled') ||
+      //           errorMsg.includes('Cancelled')
+      //         ) {
+      //           setIsPurchasing(false);
+      //           return;
+      //         }
+
+      //         throw purchaseError;
+      //       }
+      //     },
+      //   },
+      // ]);
+      /* ===== END OF COMMENTED PURCHASE LOGIC ===== */
     } catch (error) {
       const errorMessage = getPurchaseErrorMessage(error);
       
@@ -320,9 +330,18 @@ export default function MembershipScreen({ navigation }: MembershipScreenProps) 
 
   // Get button text based on user's current tier vs selected tier
   const getButtonText = () => {
-    // Define tier hierarchy (lower index = lower tier)
+    // VIP tier - show custom text
+    if (selectedTier === 'vip') {
+      return t('membership.contactSales') || 'Contact Sales';
+    }
+
+    // Pro and Ultimate tiers - show "Coming Soon" (尚未推出)
+    if (selectedTier === 'pro' || selectedTier === 'ultimate') {
+      return 'Coming Soon';
+    }
+
+    // Basic tier
     const tierHierarchy = ['basic', 'pro', 'ultimate', 'vip'];
-    
     const selectedTierIndex = tierHierarchy.indexOf(selectedTier);
     const currentTierIndex = tierHierarchy.indexOf(currentMembershipTier);
 
@@ -556,9 +575,9 @@ export default function MembershipScreen({ navigation }: MembershipScreenProps) 
 
           <TouchableOpacity
             onPress={handleUpgrade}
-            disabled={isPurchasing || selectedTier === currentMembershipTier}
+            disabled={isPurchasing || selectedTier === currentMembershipTier || selectedTier === 'pro' || selectedTier === 'ultimate'}
             style={{
-              backgroundColor: isPurchasing || selectedTier === currentMembershipTier ? '#999999' : currentTier.color,
+              backgroundColor: isPurchasing || selectedTier === currentMembershipTier || selectedTier === 'pro' || selectedTier === 'ultimate' ? '#999999' : currentTier.color,
               paddingVertical: 12,
               borderRadius: 8,
               alignItems: 'center',

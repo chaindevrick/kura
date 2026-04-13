@@ -58,10 +58,11 @@ export interface Investment {
 export interface ExchangeAccount {
   id: string;
   exchange: ExchangeName;
-  accountName: string;
-  createdAt: string;
-  lastSyncedAt: string | null;
-  userId: string;
+  exchangeDisplayName: string; // Display name e.g., "Binance"
+  isVerified: boolean;
+  isActive: boolean;
+  lastVerifiedAt: string;
+  icon: string; // URL to exchange icon
 }
 
 export interface ExchangeBalance {

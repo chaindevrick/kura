@@ -27,8 +27,8 @@ export const testRevenueCatSetup = async () => {
     const offerings = await Purchases.getOfferings();
 
     Logger.info('RevenueCatDebugger', '=== Available Offerings ===');
-    if (offerings.all && offerings.all.length > 0) {
-      offerings.all.forEach((offering) => {
+    if (offerings.all && Object.keys(offerings.all).length > 0) {
+      Object.values(offerings.all).forEach((offering: any) => {
         Logger.info('RevenueCatDebugger', `📦 Offering: ${offering.identifier}`);
         offering.availablePackages?.forEach((pkg: any) => {
           Logger.info('RevenueCatDebugger', `  └─ Package: ${pkg.identifier}`, {

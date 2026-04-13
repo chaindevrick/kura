@@ -40,7 +40,7 @@ export default function NotificationScreen() {
 
   useEffect(() => {
     loadNotifications();
-  }, []);
+  }, [authToken]);
 
   const loadNotifications = async () => {
     if (!authToken) {

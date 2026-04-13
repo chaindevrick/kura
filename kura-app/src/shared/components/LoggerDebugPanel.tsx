@@ -146,7 +146,7 @@ export default function LoggerDebugPanel({ module, isVisible, onClose }: LoggerD
           <TouchableOpacity
             onPress={() => {
               const exported = Logger.exportLogs();
-              console.log('=== EXPORTED LOGS ===\n' + exported);
+              Logger.info('LoggerDebugPanel', 'Exported logs', { logsCount: exported.length });
             }}
             style={{
               flex: 1,

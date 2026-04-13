@@ -82,7 +82,7 @@ export const getStoredAuthToken = async (): Promise<string | null> => {
     const token = await AsyncStorage.getItem(AUTH_TOKEN_KEY);
     return token;
   } catch (error) {
-    console.warn('AsyncStorage unavailable, using in-memory fallback:', error);
+    Logger.warn('AuthAPI', 'AsyncStorage unavailable, using in-memory fallback', { error });
     return memoryStorage[AUTH_TOKEN_KEY] || null;
   }
 };
@@ -91,7 +91,7 @@ export const setStoredAuthToken = async (token: string): Promise<void> => {
   try {
     await AsyncStorage.setItem(AUTH_TOKEN_KEY, token);
   } catch (error) {
-    console.warn('AsyncStorage unavailable, using in-memory fallback:', error);
+    Logger.warn('AuthAPI', 'AsyncStorage unavailable, using in-memory fallback', { error });
     memoryStorage[AUTH_TOKEN_KEY] = token;
   }
 };
@@ -100,7 +100,7 @@ export const clearStoredAuthToken = async (): Promise<void> => {
   try {
     await AsyncStorage.removeItem(AUTH_TOKEN_KEY);
   } catch (error) {
-    console.warn('AsyncStorage unavailable, using in-memory fallback:', error);
+    Logger.warn('AuthAPI', 'AsyncStorage unavailable, using in-memory fallback', { error });
     delete memoryStorage[AUTH_TOKEN_KEY];
   }
 };
@@ -122,7 +122,7 @@ async function apiRequest<T>(
   }
 
   try {
-    console.log('[AuthAPI] Fetching:', {
+    Logger.debug('AuthAPI', 'Fetching', {
       method: options.method || 'GET',
       url,
       hasAuth: !!token,
@@ -150,17 +150,17 @@ async function apiRequest<T>(
 
     if (!response.ok) {
       const message = json?.error || json?.message || `Request failed with status ${response.status}`;
-      console.error('[AuthAPI] Response error:', { status: response.status, message });
+      Logger.error('AuthAPI', 'Response error', { status: response.status, message });
       throw new AuthApiError(message, response.status);
     }
 
-    console.log('[AuthAPI] Request successful', { response: json });
+    Logger.info('AuthAPI', 'Request successful', { response: json });
     return (json as T) ?? ({} as T);
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     const errorStack = error instanceof Error ? error.stack : undefined;
     
-    console.error('[AuthAPI] Request failed:', {
+    Logger.error('AuthAPI', 'Request failed', {
       url,
       method: options.method || 'GET',
       hasToken: !!token,

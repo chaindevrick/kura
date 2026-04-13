@@ -4,17 +4,10 @@ import {
   fetchExchangeBalances as fetchExchangeBalancesApi,
   getConnectedExchangeAccounts,
   ExchangeBalance,
+  ExchangeAccount,
+  RateLimitInfo,
 } from '../api/exchangeApi';
 import Logger from '../utils/Logger';
-
-export interface ExchangeAccount {
-  id: string;
-  exchange: 'binance' | 'kraken' | 'coinbase' | 'okx' | 'huobi' | 'bybit' | 'kucoin' | 'bitget' | 'gateio';
-  accountName: string;
-  createdAt: string;
-  lastSyncedAt: string | null;
-  userId: string;
-}
 
 interface ExchangeStoreState {
   // Exchange 專用數據
@@ -25,6 +18,8 @@ interface ExchangeStoreState {
   isLoading: Record<string, boolean>; // 按 exchangeAccountId 追蹤加載狀態
   error: string | null;
   lastSyncedTime: Record<string, number | null>; // 按 exchangeAccountId 追蹤同步時間
+  rateLimitInfo: Record<string, RateLimitInfo | null>; // 按 exchangeAccountId 追蹤API限制
+  cacheNotice: Record<string, string | null>; // 按 exchangeAccountId 追蹤緩存通知
 
   // Actions
   addExchangeAccount: (account: ExchangeAccount) => void;
@@ -38,6 +33,8 @@ interface ExchangeStoreState {
   fetchExchangeBalances: (exchangeAccountId: string, token: string) => Promise<void>;
   setLoading: (exchangeAccountId: string, loading: boolean) => void;
   setError: (error: string | null) => void;
+  setRateLimitInfo: (exchangeAccountId: string, rateLimitInfo: RateLimitInfo | null) => void;
+  setCacheNotice: (exchangeAccountId: string, notice: string | null) => void;
   clearAll: () => void;
 
   // Selectors
@@ -64,7 +61,8 @@ function balanceToInvestment(
     change24h: balance.change24h,
     usdValue: balance.usdValue,
     type: 'crypto',
-    logo: `https://www.google.com/s2/favicons?domain=${exchange}.com&sz=128`,
+    // Use logo from backend if available
+    logo: balance.logo || '',
   };
 }
 
@@ -77,13 +75,16 @@ export const useExchangeStore = create<ExchangeStoreState>((set, get) => ({
   isLoading: {},
   error: null,
   lastSyncedTime: {},
+  rateLimitInfo: {},
+  cacheNotice: {},
 
   // Actions
   addExchangeAccount: (account: ExchangeAccount) => {
     Logger.info('ExchangeStore', '➕ Added exchange account:', {
       exchange: account.exchange,
       accountId: account.id,
-      accountName: account.accountName,
+      displayName: account.exchangeDisplayName,
+      isVerified: account.isVerified,
     });
 
     set((state) => ({
@@ -106,6 +107,14 @@ export const useExchangeStore = create<ExchangeStoreState>((set, get) => ({
       ),
       lastSyncedTime: {
         ...state.lastSyncedTime,
+        [exchangeAccountId]: null,
+      },
+      rateLimitInfo: {
+        ...state.rateLimitInfo,
+        [exchangeAccountId]: null,
+      },
+      cacheNotice: {
+        ...state.cacheNotice,
         [exchangeAccountId]: null,
       },
     }));
@@ -196,6 +205,24 @@ export const useExchangeStore = create<ExchangeStoreState>((set, get) => ({
     set({ error });
   },
 
+  setRateLimitInfo: (exchangeAccountId: string, rateLimitInfo: RateLimitInfo | null) => {
+    set((state) => ({
+      rateLimitInfo: {
+        ...state.rateLimitInfo,
+        [exchangeAccountId]: rateLimitInfo,
+      },
+    }));
+  },
+
+  setCacheNotice: (exchangeAccountId: string, notice: string | null) => {
+    set((state) => ({
+      cacheNotice: {
+        ...state.cacheNotice,
+        [exchangeAccountId]: notice,
+      },
+    }));
+  },
+
   fetchExchangeBalances: async (exchangeAccountId: string, token: string) => {
     try {
       set((state) => ({
@@ -216,9 +243,8 @@ export const useExchangeStore = create<ExchangeStoreState>((set, get) => ({
       const missingFields = [];
       if (!exchangeAccount.id) missingFields.push('id');
       if (!exchangeAccount.exchange) missingFields.push('exchange');
-      if (!exchangeAccount.accountName) missingFields.push('accountName');
-      if (!exchangeAccount.userId) missingFields.push('userId');
-      if (!exchangeAccount.createdAt) missingFields.push('createdAt');
+      if (!exchangeAccount.exchangeDisplayName) missingFields.push('exchangeDisplayName');
+      if (!exchangeAccount.icon) missingFields.push('icon');
 
       Logger.debug('ExchangeStore', 'Fetching exchange balances', {
         exchangeAccountId,
@@ -227,6 +253,27 @@ export const useExchangeStore = create<ExchangeStoreState>((set, get) => ({
       });
 
       const snapshot = await fetchExchangeBalancesApi(exchangeAccountId, token);
+
+      // Handle rate limit info and cache notice
+      if (snapshot.rateLimitInfo) {
+        get().setRateLimitInfo(exchangeAccountId, snapshot.rateLimitInfo);
+        Logger.warn('ExchangeStore', 'Rate limit info', {
+          exchangeAccountId,
+          remaining: snapshot.rateLimitInfo.remaining,
+          limit: snapshot.rateLimitInfo.limit,
+          limitReached: snapshot.rateLimitInfo.limitReached,
+          message: snapshot.rateLimitInfo.message,
+        });
+      }
+
+      if (snapshot.cacheNotice) {
+        get().setCacheNotice(exchangeAccountId, snapshot.cacheNotice);
+        Logger.info('ExchangeStore', 'Cache notice', {
+          exchangeAccountId,
+          notice: snapshot.cacheNotice,
+          fromCache: snapshot.fromCache,
+        });
+      }
 
       Logger.debug('ExchangeStore', 'Exchange snapshot received', {
         balancesCount: snapshot.balances?.length,
@@ -238,14 +285,15 @@ export const useExchangeStore = create<ExchangeStoreState>((set, get) => ({
         totalUsdValue: snapshot.totalUsdValue,
         accountDisplayName: snapshot.account.displayName,
         timestamp: snapshot.timestamp,
+        fromCache: snapshot.fromCache,
       });
 
-      // Create InvestmentAccount for this exchange
+      // Create InvestmentAccount for this exchange - use backend data directly
       const investmentAccount: InvestmentAccount = {
         id: exchangeAccountId,
-        name: snapshot.account.displayName || `${snapshot.account.exchange || 'Unknown'} Account`,
+        name: snapshot.account.displayName,
         type: 'Exchange',
-        logo: `https://www.google.com/s2/favicons?domain=${snapshot.account.exchange || 'exchange'}.com&sz=128`,
+        logo: snapshot.account.icon,
       };
 
       // Convert balances (總持倉) to Investment array
@@ -320,10 +368,8 @@ export const useExchangeStore = create<ExchangeStoreState>((set, get) => ({
       if (!account) {
         missingFields.push('account-not-found');
       } else {
-        if (!account.accountName) missingFields.push('accountName');
-        if (!account.userId) missingFields.push('userId');
-        if (!account.createdAt) missingFields.push('createdAt');
-        if (!account.lastSyncedAt) missingFields.push('lastSyncedAt');
+        if (!account.exchangeDisplayName) missingFields.push('exchangeDisplayName');
+        if (!account.icon) missingFields.push('icon');
         if (!account.id) missingFields.push('id');
         if (!account.exchange) missingFields.push('exchange');
       }
@@ -357,6 +403,8 @@ export const useExchangeStore = create<ExchangeStoreState>((set, get) => ({
       isLoading: {},
       error: null,
       lastSyncedTime: {},
+      rateLimitInfo: {},
+      cacheNotice: {},
     });
   },
 

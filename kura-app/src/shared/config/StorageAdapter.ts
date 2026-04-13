@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import Logger from '../utils/Logger'
 import { useAppStore } from '../store/useAppStore'
 import { useFinanceStore } from '../store/useFinanceStore'
 
@@ -24,7 +25,7 @@ export class StorageAdapter {
         return value as any
       }
     } catch (error) {
-      console.error(`[StorageAdapter] Failed to get item ${key}:`, error)
+      Logger.error('StorageAdapter', `Failed to get item ${key}`, { error })
       return undefined
     }
   }
@@ -37,9 +38,9 @@ export class StorageAdapter {
       const prefixedKey = this.prefix + key
       const serialized = typeof value === 'string' ? value : JSON.stringify(value)
       await AsyncStorage.setItem(prefixedKey, serialized)
-      console.log(`[StorageAdapter] Set item ${key}`)
+      Logger.debug('StorageAdapter', `Set item ${key}`)
     } catch (error) {
-      console.error(`[StorageAdapter] Failed to set item ${key}:`, error)
+      Logger.error('StorageAdapter', `Failed to set item ${key}`, { error })
     }
   }
 
@@ -50,9 +51,9 @@ export class StorageAdapter {
     try {
       const prefixedKey = this.prefix + key
       await AsyncStorage.removeItem(prefixedKey)
-      console.log(`[StorageAdapter] Removed item ${key}`)
+      Logger.debug('StorageAdapter', `Removed item ${key}`)
     } catch (error) {
-      console.error(`[StorageAdapter] Failed to remove item ${key}:`, error)
+      Logger.error('StorageAdapter', `Failed to remove item ${key}`, { error })
     }
   }
 
@@ -66,10 +67,10 @@ export class StorageAdapter {
       const filtered = allKeys
         .filter(key => key.startsWith(this.prefix))
         .map(key => key.substring(this.prefix.length))
-      console.log(`[StorageAdapter] Found ${filtered.length} keys`)
+      Logger.debug('StorageAdapter', `Found ${filtered.length} keys`)
       return filtered
     } catch (error) {
-      console.error('[StorageAdapter] Failed to get keys:', error)
+      Logger.error('StorageAdapter', 'Failed to get keys', { error })
       return []
     }
   }
@@ -88,10 +89,10 @@ export class StorageAdapter {
           entries.push([key, value])
         }
       }
-      console.log(`[StorageAdapter] Retrieved ${entries.length} entries`)
+      Logger.debug('StorageAdapter', `Retrieved ${entries.length} entries`)
       return entries
     } catch (error) {
-      console.error('[StorageAdapter] Failed to get entries:', error)
+      Logger.error('StorageAdapter', 'Failed to get entries', { error })
       return []
     }
   }
@@ -104,7 +105,7 @@ export class StorageAdapter {
       const keys = await this.getKeys()
       await AsyncStorage.multiRemove(keys.map(key => this.prefix + key))
     } catch (error) {
-      console.error('Failed to clear storage:', error)
+      Logger.error('StorageAdapter', 'Failed to clear storage', { error })
     }
   }
 
@@ -148,9 +149,9 @@ export class StorageAdapter {
         await this.setItem('ai_opted_in', financeState.isAiOptedIn)
       }
 
-      console.log('App state synchronized to storage')
+      Logger.info('StorageAdapter', 'App state synchronized to storage')
     } catch (error) {
-      console.error('Failed to sync app state:', error)
+      Logger.error('StorageAdapter', 'Failed to sync app state', { error })
     }
   }
 
@@ -170,7 +171,7 @@ export class StorageAdapter {
           appStore.setBaseCurrency(preferences.baseCurrency || 'USD')
           // Note: toggle methods exist in store for alerts and summary
         } catch (e) {
-          console.error('Failed to restore preferences:', e)
+          Logger.error('StorageAdapter', 'Failed to restore preferences', { error: e })
         }
       }
 
@@ -186,9 +187,9 @@ export class StorageAdapter {
         financeStore.toggleAiOptIn()
       }
 
-      console.log('App state restored from storage')
+      Logger.info('StorageAdapter', 'App state restored from storage')
     } catch (error) {
-      console.error('Failed to restore app state:', error)
+      Logger.error('StorageAdapter', 'Failed to restore app state', { error })
     }
   }
 }

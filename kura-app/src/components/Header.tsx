@@ -55,7 +55,11 @@ export default function Header() {
         style={{ paddingTop: Math.max(insets.top, 10) + 6, paddingHorizontal: 24, paddingBottom: 8, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}
       >
         <TouchableOpacity onPress={handleLogoPress} style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <Text style={{ color: '#FFFFFF', fontWeight: 'bold', fontSize: 24, letterSpacing: 0.5 }}>Kura</Text>
+          <Image
+            source={require('../../assets/kura-logo.png')}
+            style={{ width: 40, height: 40, borderRadius: 20 }}
+            resizeMode="cover"
+          />
         </TouchableOpacity>
 
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>

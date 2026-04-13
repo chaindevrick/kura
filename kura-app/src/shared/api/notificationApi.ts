@@ -42,6 +42,8 @@ async function notificationRequest<T>(
     Logger.debug('NotificationAPI', 'Fetching:', {
       method: options.method || 'GET',
       url,
+      hasToken: !!token,
+      tokenLength: token?.length || 0,
     });
 
     const response = await fetch(url, {
@@ -72,6 +74,8 @@ async function notificationRequest<T>(
       Logger.error('NotificationAPI', 'Request failed:', {
         status: response.status,
         message: errorMessage,
+        hasToken: !!token,
+        url,
       });
       throw new NotificationApiError(errorMessage, response.status);
     }

@@ -26,11 +26,27 @@ export interface SupportedExchange {
 
 export interface ExchangeAccount {
   id: string;
-  userId: string;
   exchange: ExchangeName;
-  accountName: string;
-  createdAt: string;
-  lastSyncedAt: string | null;
+  exchangeDisplayName: string; // Display name e.g., "Binance"
+  isVerified: boolean;
+  isActive: boolean;
+  lastVerifiedAt: string;
+  icon: string; // URL to exchange icon
+}
+
+export interface ExchangeAccountResponse {
+  accounts: ExchangeAccount[];
+  metadata: {
+    timestamp: string;
+    count: number;
+  };
+}
+
+export interface RateLimitInfo {
+  remaining: number;
+  limit: number;
+  limitReached: boolean;
+  message?: string;
 }
 
 export interface ExchangeBalance {
@@ -41,6 +57,7 @@ export interface ExchangeBalance {
   usdPrice: number;
   change24h: number; // 24小時價格變化百分比
   usdValue: number; // total * usdPrice
+  logo?: string; // Optional logo URL from backend
 }
 
 export interface ExchangeSnapshotAccount {
@@ -68,6 +85,13 @@ export interface ExchangePosition {
   usdValue: number; // 倉位USD價值
 }
 
+export interface ExchangeSnapshotAccount {
+  id: string;
+  exchange: ExchangeName;
+  displayName: string;
+  icon: string;
+}
+
 export interface ExchangeSnapshot {
   account: ExchangeSnapshotAccount;
   balances: ExchangeBalance[]; // 總持倉
@@ -78,6 +102,9 @@ export interface ExchangeSnapshot {
   positionsUsdTotal: number; // 期貨倉位總USD價值
   totalUsdValue: number; // 總USD價值（balances + positions）
   timestamp: string;
+  rateLimitInfo: RateLimitInfo; // Rate limit tracking
+  fromCache?: boolean; // Whether this is cached data
+  cacheNotice?: string; // Notice about cached data
 }
 
 interface ApiErrorBody {

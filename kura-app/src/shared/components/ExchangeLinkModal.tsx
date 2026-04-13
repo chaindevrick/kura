@@ -167,22 +167,14 @@ export default function ExchangeLinkModal({
         Logger.error('ExchangeLinkModal', 'Backend returned incomplete exchange account', {
           has_id: !!connectedAccount?.id,
           has_exchange: !!connectedAccount?.exchange,
-          has_userId: !!connectedAccount?.userId,
           response: JSON.stringify(connectedAccount).substring(0, 200),
         });
         setError('Backend error: Invalid account response. Please try again.');
         return;
       }
 
-      // Add to store with display name
-      addExchangeAccount({
-        id: connectedAccount.id,
-        exchange: connectedAccount.exchange,
-        accountName: accountName,
-        createdAt: connectedAccount.createdAt,
-        lastSyncedAt: connectedAccount.lastSyncedAt,
-        userId: connectedAccount.userId,
-      });
+      // Add to store - connectedAccount already has all required fields
+      addExchangeAccount(connectedAccount);
 
       // Attempt to fetch initial balances
       try {
@@ -215,7 +207,15 @@ export default function ExchangeLinkModal({
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Failed to connect exchange';
       Logger.error('ExchangeLinkModal', 'Connection failed', { error: errorMsg });
-      setError(errorMsg);
+      
+      // Filter out Kraken Invalid key error from UI display
+      if (errorMsg.toLowerCase().includes('kraken') && errorMsg.toLowerCase().includes('invalid')) {
+        // Log but don't show this specific error to user
+        Logger.warn('ExchangeLinkModal', 'Kraken invalid key - suppressed from UI', { error: errorMsg });
+        setError('Failed to connect. Please check your API credentials.');
+      } else {
+        setError(errorMsg);
+      }
       setIsLoading(false);
     }
   };

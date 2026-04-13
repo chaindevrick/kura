@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Image } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Image, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFinanceStore } from '../../../shared/store/useFinanceStore';
 import { useAppStore } from '../../../shared/store/useAppStore';
 import { useAppTranslation } from '../../../shared/hooks/useAppTranslation';
+import Logger from '../../../shared/utils/Logger';
 import ConnectAccountModal from '../../../shared/components/ConnectAccountModal';
 import PlaidLinkModal from '../../../shared/components/PlaidLinkModal';
 import ExchangeLinkModal from '../../../shared/components/ExchangeLinkModal';
@@ -42,15 +43,59 @@ export default function ConnectedAccountsScreen({ onClose }: ConnectedAccountsSc
   const [showConnectModal, setShowConnectModal] = useState(false);
   const [showPlaidModal, setShowPlaidModal] = useState(false);
   const [showExchangeModal, setShowExchangeModal] = useState(false);
+  const [disconnectingId, setDisconnectingId] = useState<string | null>(null);
   const { t } = useAppTranslation();
   const accounts = useFinanceStore((state) => state.accounts);
   const investmentAccounts = useFinanceStore((state) => state.investmentAccounts);
   const exchangeAccounts = useFinanceStore((state) => state.exchangeAccounts);
   const plaidLinkToken = useAppStore((state: any) => state.plaidLinkToken);
+  const disconnectPlaidAccount = useAppStore((state) => state.disconnectPlaidAccount);
+  const disconnectExchangeAccount = useAppStore((state) => state.disconnectExchangeAccount);
+  const disconnectInvestmentAccount = useFinanceStore((state) => state.disconnectInvestmentAccount);
 
-  const handleDisconnect = (accountId: string) => {
-    // 這裡可以調用 mutation 來移除賬戶
-    console.log('Disconnect account:', accountId);
+  const handleDisconnect = (accountId: string, category: 'Banking' | 'Investment' | 'Exchange', name: string) => {
+    Alert.alert(
+      'Disconnect Account?',
+      `Are you sure you want to disconnect "${name}"?`,
+      [
+        {
+          text: 'Cancel',
+          onPress: () => {},
+          style: 'cancel',
+        },
+        {
+          text: 'Disconnect',
+          onPress: async () => {
+            await performDisconnect(accountId, category);
+          },
+          style: 'destructive',
+        },
+      ]
+    );
+  };
+
+  const performDisconnect = async (accountId: string, category: 'Banking' | 'Investment' | 'Exchange') => {
+    setDisconnectingId(accountId);
+    try {
+      Logger.debug('ConnectedAccountsScreen', 'Disconnecting account', { accountId, category });
+
+      if (category === 'Banking') {
+        await disconnectPlaidAccount(accountId);
+      } else if (category === 'Investment') {
+        disconnectInvestmentAccount(accountId);
+      } else if (category === 'Exchange') {
+        await disconnectExchangeAccount(accountId);
+      }
+
+      Logger.info('ConnectedAccountsScreen', 'Account disconnected successfully', { accountId, category });
+      Alert.alert('Success', 'Account disconnected successfully');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to disconnect account';
+      Logger.error('ConnectedAccountsScreen', 'Failed to disconnect account', { error: errorMessage });
+      Alert.alert('Error', errorMessage);
+    } finally {
+      setDisconnectingId(null);
+    }
   };
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -79,11 +124,11 @@ export default function ConnectedAccountsScreen({ onClose }: ConnectedAccountsSc
     })),
     ...exchangeAccounts.map((acc) => ({
       ...acc,
-      name: acc.accountName,
+      name: acc.exchangeDisplayName,
       category: 'Exchange',
-      typeLabel: getAccountTypeLabel(acc.exchange),
-      icon: getAccountIcon('Exchange'),
-      logo: '',
+      typeLabel: 'Exchange',
+      icon: getAccountIcon('Exchange'), // Fallback icon (will use logo instead)
+      logo: acc.icon, // Use the icon URL from API directly
     })),
   ];
 
@@ -121,10 +166,15 @@ export default function ConnectedAccountsScreen({ onClose }: ConnectedAccountsSc
                 </View>
 
                 <TouchableOpacity
-                  onPress={() => handleDisconnect(account.id)}
+                  onPress={() => handleDisconnect(account.id, account.category as 'Banking' | 'Investment' | 'Exchange', account.name)}
+                  disabled={disconnectingId === account.id}
                   style={{ padding: 8 }}
                 >
-                  <Ionicons name="close-circle" size={24} color="#EF4444" />
+                  {disconnectingId === account.id ? (
+                    <ActivityIndicator size={24} color="#EF4444" />
+                  ) : (
+                    <Ionicons name="close-circle" size={24} color="#EF4444" />
+                  )}
                 </TouchableOpacity>
               </View>
             ))}
