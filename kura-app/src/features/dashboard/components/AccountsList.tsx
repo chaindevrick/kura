@@ -9,6 +9,7 @@ import ConnectAccountModal from '../../../shared/components/ConnectAccountModal'
 import PlaidLinkModal from '../../../shared/components/PlaidLinkModal';
 import ExchangeLinkModal from '../../../shared/components/ExchangeLinkModal';
 import CurrencyDisplay from '../../../shared/components/CurrencyDisplay';
+import { isStablecoin } from '../../../shared/utils/stablecoinUtils';
 
 interface AccountsListProps {
   accounts: Account[];
@@ -38,9 +39,9 @@ export default function AccountsList({
   const { isConnected, address, openWallet } = useWalletSync();
   const investments = useFinanceStore((state) => state.investments);
   
-  // Calculate Stablecoin (USDC + USDT) balance
+  // Calculate Stablecoin (USDC, USDT, USDC.B, USDT.E, etc.) balance
   const stablecoinBalance = investments
-    .filter((inv) => inv.symbol === 'USDC' || inv.symbol === 'USDT')
+    .filter((inv) => isStablecoin(inv.symbol))
     .reduce((sum, inv) => sum + (inv.holdings * inv.currentPrice), 0);
 
   // 默认滚动到最底部

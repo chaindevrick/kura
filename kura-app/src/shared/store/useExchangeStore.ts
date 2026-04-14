@@ -8,6 +8,7 @@ import {
   RateLimitInfo,
 } from '../api/exchangeApi';
 import Logger from '../utils/Logger';
+import { isStablecoin, normalizeInvestmentPrice } from '../utils/stablecoinUtils';
 
 interface ExchangeStoreState {
   // Exchange 專用數據
@@ -51,15 +52,41 @@ function balanceToInvestment(
   accountId: string,
   exchange: string
 ): Investment {
+  // 规范化价格 - 稳定币如果价格为 0，使用默认价格 1.0
+  const normalizedPrice = normalizeInvestmentPrice(balance.symbol, balance.usdPrice);
+  
+  // 如果没有 usdValue 或为 0，计算一个
+  let usdValue = balance.usdValue;
+  if (!usdValue || usdValue === 0) {
+    usdValue = balance.total * normalizedPrice;
+    if (balance.usdPrice === 0 && normalizedPrice > 0) {
+      Logger.debug('ExchangeStore', 'Using default price for stablecoin', {
+        symbol: balance.symbol,
+        holdings: balance.total,
+        price: normalizedPrice,
+        exchange,
+      });
+    }
+  }
+
+  // если не было информации о цене, логируем предупреждение
+  if (balance.usdPrice === 0 && !isStablecoin(balance.symbol)) {
+    Logger.warn('ExchangeStore', 'Zero USD price for non-stablecoin asset', {
+      symbol: balance.symbol,
+      total: balance.total,
+      exchange,
+    });
+  }
+
   return {
     id: `${accountId}-${balance.symbol}`,
     accountId,
     symbol: balance.symbol,
     name: balance.symbol, // Will be enriched with coin name if available
     holdings: balance.total,
-    currentPrice: balance.usdPrice,
+    currentPrice: normalizedPrice,
     change24h: balance.change24h,
-    usdValue: balance.usdValue,
+    usdValue: usdValue,
     type: 'crypto',
     // Use logo from backend if available
     logo: balance.logo || '',

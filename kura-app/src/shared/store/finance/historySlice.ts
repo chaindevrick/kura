@@ -1,6 +1,7 @@
 import { StateCreator } from 'zustand';
 import { HistoryState, AssetSnapshot, FinanceState } from './types';
 import Logger from '../../utils/Logger';
+import { isStablecoin } from '../../utils/stablecoinUtils';
 
 /**
  * History Slice - 處理資產快照與性能追蹤
@@ -19,10 +20,10 @@ export const createHistorySlice: StateCreator<FinanceState, [], [], HistoryState
     const state = get();
 
     // 投资总价值 (仅计算 Investment 账户的投资，不包括银行账户)
-    // 忽略 USDC 和 USDT 稳定币
+    // 忽略稳定币（USDC, USDT 及其变体如 USDC.B, USDT.E）
     const investmentValue = state.investments.reduce((sum, investment) => {
-      // Skip USDC and USDT
-      if (investment.symbol === 'USDC' || investment.symbol === 'USDT') {
+      // Skip stablecoins
+      if (isStablecoin(investment.symbol)) {
         Logger.debug('HistorySlice', 'Skipping stablecoin from calculation', {
           symbol: investment.symbol,
           holdings: investment.holdings,
@@ -64,8 +65,8 @@ export const createHistorySlice: StateCreator<FinanceState, [], [], HistoryState
     const totalAssets = get().calculateTotalAssets();
     const bankingBalance = state.accounts.reduce((sum, account) => sum + account.balance, 0);
     const investmentValue = state.investments.reduce((sum, investment) => {
-      // Skip USDC and USDT stablecoins
-      if (investment.symbol === 'USDC' || investment.symbol === 'USDT') {
+      // Skip stablecoins
+      if (isStablecoin(investment.symbol)) {
         return sum;
       }
       return sum + investment.holdings * investment.currentPrice;
@@ -75,8 +76,8 @@ export const createHistorySlice: StateCreator<FinanceState, [], [], HistoryState
       .reduce((sum, account) => {
         const investments = state.investments.filter((inv) => inv.accountId === account.id);
         return sum + investments.reduce((invSum, inv) => {
-          // Skip USDC and USDT stablecoins
-          if (inv.symbol === 'USDC' || inv.symbol === 'USDT') {
+          // Skip stablecoins
+          if (isStablecoin(inv.symbol)) {
             return invSum;
           }
           return invSum + inv.holdings * inv.currentPrice;
