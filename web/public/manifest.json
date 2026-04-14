@@ -10,9 +10,15 @@
   "theme_color": "#8B5CF6",
   "icons": [
     {
-      "src": "/android/mipmap-ldpi/ic_launcher.png",
-      "sizes": "36x36",
-      "type": "image/png",
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any masked"
+    },
+    {
+      "src": "/favicon.ico",
+      "sizes": "32x32",
+      "type": "image/x-icon",
       "purpose": "any"
     },
     {

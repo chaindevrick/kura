@@ -12,7 +12,10 @@ export const metadata: Metadata = {
   authors: [{ name: "Kura" }],
   manifest: "/manifest.json",
   icons: {
-    icon: '/icon.png', // Created by icon.ts
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/favicon.ico' },
+    ],
     apple: [
       { url: '/ios/AppIcon.appiconset/icon-60@3x.png', sizes: '180x180', type: 'image/png' },
       { url: '/ios/AppIcon.appiconset/icon-60@2x.png', sizes: '120x120', type: 'image/png' },
