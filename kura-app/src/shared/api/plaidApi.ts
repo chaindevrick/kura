@@ -182,16 +182,16 @@ export const fetchPlaidFinanceSnapshot = (token: string, refresh: boolean = fals
 };
 
 /**
- * 断开 Plaid 银行账户连接
+ * 断开 Plaid 银行账户连接 (Checking/Savings/Credit)
  */
 export const disconnectPlaidAccount = (
   token: string,
   accountId: string
 ): Promise<{ status: string; message: string }> => {
   return plaidRequest<{ status: string; message: string }>(
-    '/api/plaid/account',
+    '/api/plaid/disconnect',
     {
-      method: 'DELETE',
+      method: 'POST',
       body: JSON.stringify({ accountId }),
     },
     token

@@ -2,7 +2,7 @@ module.exports = {
   expo: {
     name: "Kura",
     slug: "kura-app",
-    version: "0.0.3",
+    version: "0.0.5",
     orientation: "portrait",
     icon: "./assets/icon.png",
     userInterfaceStyle: "light",
