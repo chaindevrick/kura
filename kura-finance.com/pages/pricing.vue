@@ -5,74 +5,75 @@ definePageMeta({
 
 const plans = [
   {
-    name: 'Starter',
+    name: 'Kura Basic',
     price: 'Free',
-    description: 'Perfect for getting started',
+    period: '',
+    description: 'Entry-level plan',
     features: [
-      'Up to 3 wallet integrations',
-      'Basic portfolio analytics',
-      'Manual transaction tracking',
-      'Community support',
-      'Read-only API access'
+      'Unlimited Accounts: Bind unlimited traditional banks, credit cards, or Web3 wallets.',
+      'Unified Assets: Combine fiat deposits, loans, and crypto with daily automated syncs.',
+      '30-Day Trends: Asset charts and basic P&L analysis for the past month.'
     ],
     cta: 'Get Started',
     highlighted: false,
   },
   {
-    name: 'Professional',
-    price: '$99',
-    period: '/month',
-    description: 'For serious investors',
+    name: 'Kura Pro',
+    price: '$12.99',
+    period: '/ mo',
+    priceSubtext: '$129.99 billed annually (~$10.83/mo)',
+    description: 'Advanced financial management',
     features: [
-      'Unlimited wallet integrations',
-      'Advanced analytics & insights',
-      'Automated transaction tracking',
-      'Priority email support',
-      'Advanced API access',
-      'Tax-loss harvesting reports',
-      'Multi-signature support'
+      'Everything in Basic',
+      'Arbitrage Alerts: Auto-compare fiat debt with on-chain yields for optimal allocation.',
+      'One-Click Tax Export: Generate accountant-approved CSV reports including gas fees.',
+      'Permanent History: Visually track your long-term financial trajectory without time limits.',
+      'Advanced Sync: Up to 5 manual syncs daily, background updates every 6 hours.'
     ],
     cta: 'Start Free Trial',
     highlighted: true,
   },
   {
-    name: 'Enterprise',
-    price: 'Custom',
-    description: 'For institutional investors',
+    name: 'Kura Ultimate',
+    price: '$29.99',
+    period: '/ mo',
+    priceSubtext: '$299.99 billed annually (~$24.99/mo)',
+    description: 'Professional financial tools',
     features: [
-      'Everything in Professional',
-      'Dedicated account manager',
-      'Custom API integrations',
-      'Phone & email support',
-      'Custom reporting',
-      'Compliance & audit features',
-      'Custom SLA'
+      'Everything in Pro',
+      'Deep DeFi Analysis: Direct contract parsing for precise IL and cross-chain gas loss.',
+      'Real-Time Alerts: Telegram/Discord notifications for abnormal movements or liquidations.',
+      'High-Frequency Sync: 20 manual syncs daily, background updates every hour.'
     ],
-    cta: 'Schedule Demo',
+    cta: 'Upgrade to Ultimate',
+    highlighted: false,
+  },
+  {
+    name: 'Kura VIP',
+    price: '$999.99+',
+    period: '/ yr',
+    description: 'Exclusive custom solution',
+    features: [
+      'Everything in Ultimate',
+      'Dedicated Node: Use your own Alchemy/Infura API Key for millisecond-level data.',
+      'Developer API & Webhooks: Top-tier access to stream standardized JSON to your systems.'
+    ],
+    cta: 'Contact Us',
     highlighted: false,
   }
 ];
 
 const handlePlanAction = (planName: string) => {
-  if (planName === 'Starter') {
+  if (planName === 'Kura Basic' || planName === 'Kura Pro' || planName === 'Kura Ultimate') {
     navigateTo('https://app.kura-finance.com', { external: true });
-  } else if (planName === 'Professional') {
-    navigateTo('https://app.kura-finance.com', { external: true });
-  } else if (planName === 'Enterprise') {
+  } else {
     alert('Scheduling demo - feature coming soon!');
   }
 };
 </script>
 
 <template>
-  <div class="w-full bg-kura-background text-white">
-    <!-- Background Ambient Glows -->
-    <div class="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] bg-kura-primary/10 blur-[120px] rounded-full pointer-events-none z-0" />
-    <div class="fixed bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-kura-secondary/10 blur-[120px] rounded-full pointer-events-none z-0" />
-
-    <!-- Header -->
-    <Header />
-
+  <div class="w-full text-white">
     <!-- Main content -->
     <main class="relative z-10 w-full px-4 sm:px-6 py-16 md:py-24">
       <div class="max-w-7xl mx-auto">
@@ -87,41 +88,44 @@ const handlePlanAction = (planName: string) => {
         </section>
 
         <!-- Pricing Cards -->
-        <div class="grid md:grid-cols-3 gap-8 lg:gap-6 mb-16">
-          <div v-for="(plan, index) in plans" :key="index" class="relative group">
+        <div class="grid md:grid-cols-2 xl:grid-cols-4 gap-6 lg:gap-8 mb-16">
+          <div v-for="(plan, index) in plans" :key="index" class="relative group flex">
             <!-- Glow effect for highlighted plan -->
             <div v-if="plan.highlighted" class="absolute inset-0 bg-gradient-to-r from-kura-primary/20 to-kura-secondary/20 rounded-2xl blur-xl opacity-60 group-hover:opacity-100 transition-opacity duration-300" />
             
             <!-- Card -->
-            <div class="relative bg-gradient-to-br from-white/[0.05] to-transparent border transition-all duration-300 rounded-2xl" :class="plan.highlighted ? 'border-kura-primary/50 lg:scale-105' : 'border-white/10 hover:border-white/20'">
-              <div class="p-8 md:p-10">
-                <!-- Plan Header -->
-                <div class="mb-8">
-                  <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-2xl font-bold">{{ plan.name }}</h3>
-                    <span v-if="plan.highlighted" class="px-3 py-1 rounded-full bg-kura-primary/20 text-kura-primary text-xs font-bold uppercase tracking-widest">Most Popular</span>
+            <div class="relative w-full bg-gradient-to-br from-white/[0.05] to-transparent border transition-all duration-300 rounded-2xl flex flex-col" :class="plan.highlighted ? 'border-kura-primary/50 xl:scale-105 z-10' : 'border-white/10 hover:border-white/20'">
+              <div class="p-5 lg:p-7 flex flex-col h-full">
+                <!-- Plan Header (Fixed minimum height to align buttons) -->
+                <div class="flex flex-col grow-0 min-h-[170px] lg:min-h-[180px]">
+                  <div class="flex items-center justify-between mb-2 min-h-[28px]">
+                    <h3 class="text-lg lg:text-xl font-bold">{{ plan.name }}</h3>
+                    <span v-if="plan.highlighted" class="px-2 py-0.5 rounded-full bg-kura-primary/20 text-kura-primary text-[10px] font-bold uppercase tracking-widest whitespace-nowrap ml-2 shrink-0">Popular</span>
                   </div>
-                  <p class="text-gray-400 mb-6">{{ plan.description }}</p>
+                  <p class="text-gray-400 mb-4 text-xs lg:text-sm">{{ plan.description }}</p>
                   
                   <!-- Price -->
-                  <div class="mb-6">
-                    <span class="text-5xl font-black">{{ plan.price }}</span>
-                    <span v-if="plan.period" class="text-gray-400 ml-2">{{ plan.period }}</span>
+                  <div class="mt-auto mb-4">
+                    <span class="text-3xl lg:text-4xl font-black">{{ plan.price }}</span>
+                    <span v-if="plan.period" class="text-gray-400 ml-1 text-xs">{{ plan.period }}</span>
+                    <div class="text-xs text-kura-primary mt-1 min-h-[16px]">
+                      <span v-if="'priceSubtext' in plan">{{ plan.priceSubtext }}</span>
+                    </div>
                   </div>
                 </div>
 
-                <!-- CTA Button -->
-                <button @click="handlePlanAction(plan.name)" class="w-full px-6 py-3 rounded-lg font-bold transition-all duration-300 mb-8" :class="plan.highlighted ? 'bg-gradient-to-r from-kura-primary to-kura-secondary hover:shadow-glow-primary text-white' : 'border-2 border-kura-primary/50 text-white hover:bg-kura-primary/10'">
+                <!-- CTA Button (Moved up directly under price) -->
+                <button @click="handlePlanAction(plan.name)" class="w-full px-4 py-2.5 rounded-lg text-sm font-bold transition-all duration-300 mb-6 shrink-0" :class="plan.highlighted ? 'bg-gradient-to-r from-kura-primary to-kura-secondary hover:shadow-glow-primary text-white' : 'border-2 border-kura-primary/50 text-white hover:bg-kura-primary/10'">
                   {{ plan.cta }}
                 </button>
 
                 <!-- Features List -->
-                <div class="space-y-4">
-                  <div v-for="(feature, featureIndex) in plan.features" :key="featureIndex" class="flex items-start gap-3">
-                    <svg class="w-5 h-5 text-kura-accent flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <div class="space-y-3 pt-4 border-t border-white/5 flex-grow">
+                  <div v-for="(feature, featureIndex) in plan.features" :key="featureIndex" class="flex items-start gap-2.5">
+                    <svg class="w-4 h-4 text-kura-accent flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                       <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
                     </svg>
-                    <span class="text-gray-300 text-sm md:text-base">{{ feature }}</span>
+                    <span class="text-gray-300 text-xs leading-relaxed" v-html="feature.replace(': ', ':<br/>')"></span>
                   </div>
                 </div>
               </div>
@@ -169,8 +173,5 @@ const handlePlanAction = (planName: string) => {
         </section>
       </div>
     </main>
-
-    <!-- Footer -->
-    <Footer />
   </div>
 </template>

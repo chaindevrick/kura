@@ -23,9 +23,9 @@
             <div class="w-12 h-12 rounded-lg bg-kura-primary/20 flex items-center justify-center mb-6 group-hover:bg-kura-primary/30 transition-colors text-2xl">
               🪪
             </div>
-            <h3 class="text-2xl font-bold text-white mb-4">銀行與法幣通道整合</h3>
+            <h3 class="text-2xl font-bold text-white mb-4">Bank & Fiat Integration</h3>
             <p class="text-gray-400 leading-relaxed">
-              通過業界頂尖的安全技術，一鍵連結您的傳統銀行帳戶。
+              Connect your traditional bank accounts securely with industry-leading technology in a single click.
             </p>
           </div>
         </div>
@@ -37,9 +37,9 @@
             <div class="w-12 h-12 rounded-lg bg-kura-secondary/20 flex items-center justify-center mb-6 group-hover:bg-kura-secondary/30 transition-colors text-2xl">
               🔐
             </div>
-            <h3 class="text-2xl font-bold text-white mb-4">隨身 Web3 錢包管理</h3>
+            <h3 class="text-2xl font-bold text-white mb-4">Mobile Web3 Wallet Management</h3>
             <p class="text-gray-400 leading-relaxed">
-              支援多鏈資產、錢包連接與去中心化金融（DeFi）互動，輕鬆管理加密貨幣資產。
+              Support multi-chain assets, wallet connections, and DeFi interactions. Manage your crypto assets effortlessly.
             </p>
           </div>
         </div>
@@ -51,9 +51,9 @@
             <div class="w-12 h-12 rounded-lg bg-kura-accent/20 flex items-center justify-center mb-6 group-hover:bg-kura-accent/30 transition-colors text-2xl">
               📊
             </div>
-            <h3 class="text-2xl font-bold text-white mb-4">直觀的投資看板</h3>
+            <h3 class="text-2xl font-bold text-white mb-4">Intuitive Investment Dashboard</h3>
             <p class="text-gray-400 leading-relaxed">
-              提供精美的視覺化投資組合看板，讓投資成效與資產分佈一目了然。
+              Beautiful, visual portfolio dashboard that makes your investment performance and asset allocation crystal clear.
             </p>
           </div>
         </div>
@@ -65,9 +65,9 @@
             <div class="w-12 h-12 rounded-lg bg-purple-500/20 flex items-center justify-center mb-6 group-hover:bg-purple-500/30 transition-colors text-2xl">
               💎
             </div>
-            <h3 class="text-2xl font-bold text-white mb-4">進階會員與訂閱服務</h3>
+            <h3 class="text-2xl font-bold text-white mb-4">Premium Membership & Subscriptions</h3>
             <p class="text-gray-400 leading-relaxed">
-              解鎖專業級的金融分析工具與專屬通知，升級您的理財體驗。
+              Unlock professional-grade financial analysis tools and exclusive notifications to level up your financial management.
             </p>
           </div>
         </div>
@@ -79,9 +79,9 @@
             <div class="w-12 h-12 rounded-lg bg-blue-500/20 flex items-center justify-center mb-6 group-hover:bg-blue-500/30 transition-colors text-2xl">
               🌍
             </div>
-            <h3 class="text-2xl font-bold text-white mb-4">多國語言支援</h3>
+            <h3 class="text-2xl font-bold text-white mb-4">Multi-Language Support</h3>
             <p class="text-gray-400 leading-relaxed">
-              不管您身在何處，使用您最熟悉的語言來管理財富。
+              No matter where you are, manage your wealth in the language you're most comfortable with.
             </p>
           </div>
         </div>
@@ -93,9 +93,9 @@
             <div class="w-12 h-12 rounded-lg bg-amber-500/20 flex items-center justify-center mb-6 group-hover:bg-amber-500/30 transition-colors text-2xl">
               🔔
             </div>
-            <h3 class="text-2xl font-bold text-white mb-4">智能即時通知</h3>
+            <h3 class="text-2xl font-bold text-white mb-4">Smart Real-Time Notifications</h3>
             <p class="text-gray-400 leading-relaxed">
-              行情異動、重要帳戶事件發生時，第一時間獲取通知，絕不錯過任何投資機會。
+              Get instant alerts when market conditions change or important account events occur. Never miss an opportunity.
             </p>
           </div>
         </div>

@@ -4,32 +4,33 @@
 
 /* CSS Variables for Kura Color Scheme */
 :root {
-  --color-primary: #8B5CF6;
-  --color-primary-dark: #7C3AED;
-  --color-primary-light: #A78BFA;
-  
-  --color-secondary: #3B82F6;
-  --color-secondary-dark: #1D4ED8;
-  --color-secondary-light: #60A5FA;
-  
-  --color-background: #0B0B0F;
-  --color-background-light: #1A1A24;
-  --color-background-lighter: #2D2D35;
-  
-  --color-foreground: #FFFFFF;
-  --color-text-muted: #9CA3AF;
-  --color-text-dimmed: #6B7280;
-  
-  --color-border: #2D2D35;
+  --color-primary: #8b5cf6;
+  --color-primary-dark: #7c3aed;
+  --color-primary-light: #a78bfa;
+
+  --color-secondary: #3b82f6;
+  --color-secondary-dark: #1d4ed8;
+  --color-secondary-light: #60a5fa;
+
+  --color-background: #0b0b0f;
+  --color-background-light: #1a1a24;
+  --color-background-lighter: #2d2d35;
+
+  --color-foreground: #ffffff;
+  --color-text-muted: #9ca3af;
+  --color-text-dimmed: #6b7280;
+
+  --color-border: #2d2d35;
   --color-border-light: #404049;
-  
-  --color-success: #10B981;
-  --color-warning: #F59E0B;
-  --color-error: #EF4444;
-  
-  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
-  --font-mono: 'Monaco', 'Courier New', monospace;
+
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu",
+    "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+  --font-mono: "Monaco", "Courier New", monospace;
 }
 
 /* Reset & Base Styles */
@@ -60,7 +61,12 @@ body {
 }
 
 /* Typography */
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-weight: 700;
   line-height: 1.2;
 }
@@ -97,6 +103,52 @@ a {
   color: var(--color-primary);
   text-decoration: none;
   transition: color 0.2s ease;
+}
+
+a:hover {
+  color: var(--color-primary-light);
+}
+
+/* SVG Optimization - Remove white background/borders */
+svg {
+  background: transparent !important;
+  fill: currentColor;
+  border: none !important;
+  -webkit-mask-image: none !important;
+}
+
+/* SVG in buttons and links */
+button svg,
+a svg,
+button > svg,
+a > svg {
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  -webkit-mask-image: none !important;
+}
+
+/* Favicon optimization for all browsers */
+link[rel*="icon"],
+link[rel="shortcut icon"],
+link[rel="apple-touch-icon"],
+link[rel="mask-icon"] {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  -webkit-appearance: none !important;
+}
+
+/* Safari specific fixes */
+@supports (-webkit-touch-callout: none) {
+  svg {
+    -webkit-filter: drop-shadow(0 0 0px transparent) !important;
+  }
+
+  link[rel*="icon"] {
+    background: transparent !important;
+    border: none !important;
+  }
 }
 
 a:hover {
@@ -172,7 +224,11 @@ textarea::placeholder {
 }
 
 .blur-bg {
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(59, 130, 246, 0.1));
+  background: linear-gradient(
+    135deg,
+    rgba(139, 92, 246, 0.1),
+    rgba(59, 130, 246, 0.1)
+  );
   backdrop-filter: blur(20px);
 }
 
@@ -209,7 +265,8 @@ textarea::placeholder {
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {

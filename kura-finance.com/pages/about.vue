@@ -1,166 +1,488 @@
 <template>
-  <div class="w-full h-auto bg-kura-background text-white">
-    <!-- Background Ambient Glows -->
-    <div class="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] bg-kura-primary/10 blur-[120px] rounded-full pointer-events-none z-0" />
-    <div class="fixed bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-kura-secondary/10 blur-[120px] rounded-full pointer-events-none z-0" />
-
-    <!-- Header -->
-    <Header />
-
-    <!-- Main content (with padding for fixed header) -->
-    <div class="pt-20 md:pt-24"></div>
-
-    <!-- Main content -->
-    <main class="relative z-10 w-full px-4 sm:px-6 py-16 md:py-24">
-      <div class="w-full max-w-5xl mx-auto">
-        <!-- Hero Section -->
-        <section class="mb-24">
-          <div class="relative rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.03] to-transparent backdrop-blur-xl p-12 sm:p-16 text-center overflow-hidden">
-            <div class="inline-block mb-4 px-4 py-1.5 rounded-full border border-kura-primary/30 bg-kura-primary/10 text-kura-primary-light text-sm font-medium tracking-widest uppercase">
-              About Kura Finance
-            </div>
-            <h2 class="text-5xl sm:text-6xl font-extrabold mb-6 tracking-tight">
-              Unify Your <br class="sm:hidden" />
-              <span class="bg-gradient-to-r from-kura-primary via-kura-primary-light to-kura-secondary bg-clip-text text-transparent">
-                Financial Reality
-              </span>
-            </h2>
-            <p class="text-xl text-gray-400 max-w-3xl mx-auto leading-relaxed">
-              Kura Finance is the ultimate read-only protocol for personal wealth. We bridge TradFi and Web3, delivering deterministic clarity across your entire portfolio without ever compromising self-sovereignty.
-            </p>
-          </div>
-        </section>
-
-        <!-- Trust & Transparency Section (US Corporate) -->
-        <section class="mb-24">
-          <div class="rounded-3xl border border-kura-primary/20 bg-gradient-to-br from-kura-background-light/80 to-kura-background/80 backdrop-blur-xl p-8 sm:p-10 relative overflow-hidden flex flex-col md:flex-row gap-8 items-center">
-            <div class="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-kura-primary/10 blur-3xl rounded-full pointer-events-none"></div>
-            <div class="flex-1 relative z-10">
-              <h3 class="text-2xl font-bold mb-4 flex items-center gap-3">
-                <span class="text-2xl">🇺🇸</span> US Corporate Accountability
-              </h3>
-              <p class="text-gray-300 leading-relaxed mb-4 text-lg">
-                Kura Finance LLC is a registered United States corporate entity. We operate strictly under US legal frameworks, ensuring enterprise-grade consumer data privacy and compliance.
-              </p>
-              <p class="text-gray-400 leading-relaxed">
-                As a dedicated technology provider, we maintain a <strong>strict zero-custody architecture</strong>. We are not a broker, and we do not hold your private keys. Your data is protected by US-grade encryption, while the ultimate control of your assets remains entirely in your hands.
-              </p>
-            </div>
-            <div class="hidden md:flex w-32 h-32 rounded-full border border-white/10 items-center justify-center bg-white/5 backdrop-blur-sm relative z-10">
-              <span class="text-4xl">🛡️</span>
-            </div>
-          </div>
-        </section>
-
-        <!-- Core Pillars Section -->
-        <section class="mb-24">
-          <h3 class="text-sm font-bold tracking-widest text-gray-500 uppercase mb-8 text-center">The Core Protocol</h3>
-          <div class="grid md:grid-cols-2 gap-6">
-            <div class="rounded-2xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.04] transition-colors p-8">
-              <div class="w-12 h-12 rounded-lg bg-kura-primary/20 flex items-center justify-center mb-6">
-                <svg class="w-6 h-6 text-kura-primary-light" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                </svg>
-              </div>
-              <h3 class="text-2xl font-bold mb-3 text-white">Absolute Clarity</h3>
-              <p class="text-gray-400 leading-relaxed">
-                Financial fragmentation is a thing of the past. Our mission is to aggregate disparate data points—from fiat bank accounts to multi-chain smart contracts—into a single, visually coherent source of truth.
-              </p>
-            </div>
-
-            <div class="rounded-2xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.04] transition-colors p-8">
-              <div class="w-12 h-12 rounded-lg bg-kura-secondary/20 flex items-center justify-center mb-6">
-                <svg class="w-6 h-6 text-kura-secondary-light" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                </svg>
-              </div>
-              <h3 class="text-2xl font-bold mb-3 text-white">Sovereign Security</h3>
-              <p class="text-gray-400 leading-relaxed">
-                We believe in the core ethos of Web3: Not your keys, not your coins. By operating as a strictly read-only layer, we eliminate counterparty risk, ensuring your assets are never exposed to external vulnerabilities.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        <!-- System Capabilities -->
-        <section class="mb-24">
-          <div class="mb-10">
-            <h3 class="text-3xl font-bold">System Capabilities</h3>
-          </div>
-          <div class="grid md:grid-cols-3 gap-4">
-            <div v-for="(feature, index) in capabilities" :key="index" class="rounded-xl border border-white/5 bg-white/[0.01] hover:bg-white/[0.03] hover:border-white/10 transition-all duration-300 p-6 group">
-              <div class="text-3xl mb-4 grayscale group-hover:grayscale-0 transition-all duration-300">{{ feature.icon }}</div>
-              <h4 class="text-lg font-semibold mb-2 text-gray-200">{{ feature.title }}</h4>
-              <p class="text-sm text-gray-500 leading-relaxed">{{ feature.description }}</p>
-            </div>
-          </div>
-        </section>
-
-        <!-- Technical Stack Section -->
-        <section class="mb-24">
-          <div class="rounded-3xl border border-white/5 bg-kura-background relative overflow-hidden">
-            <div class="absolute inset-0 bg-gradient-to-r from-kura-primary/10 to-transparent opacity-50"></div>
-            <div class="p-10 relative z-10 flex flex-col md:flex-row justify-between items-center gap-8">
-              <div>
-                <h3 class="text-2xl font-bold mb-2">Powered by Modern Stack</h3>
-                <p class="text-gray-400 max-w-md">
-                  Built on highly scalable, enterprise-ready infrastructure to process complex financial data streams instantly.
-                </p>
-              </div>
-              <div class="flex flex-wrap gap-3 justify-center md:justify-end max-w-md">
-                <span v-for="tech in techStack" :key="tech" class="px-3 py-1 rounded-full border border-white/10 bg-white/5 text-sm text-gray-300 font-mono">
-                  {{ tech }}
-                </span>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- CTA Section -->
-        <section class="mb-20">
-          <div class="rounded-3xl border border-kura-primary/30 bg-gradient-to-br from-kura-primary/10 to-transparent backdrop-blur-xl p-16 text-center relative overflow-hidden">
-            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-kura-primary/20 via-transparent to-transparent pointer-events-none"></div>
-            <h3 class="text-4xl font-bold mb-6 relative z-10">Experience the Overview Effect</h3>
-            <p class="text-lg text-gray-400 mb-10 max-w-2xl mx-auto relative z-10">
-              Join elite users who trust Kura Finance to aggregate, track, and visualize their global net worth.
-            </p>
-            <div class="flex flex-col sm:flex-row gap-4 justify-center relative z-10">
-              <a href="https://app.kura-finance.com" target="_blank" rel="noopener noreferrer" class="px-8 py-4 bg-white text-black font-semibold rounded-xl hover:bg-gray-200 transition-colors shadow-[0_0_30px_rgba(255,255,255,0.2)]">
-                Launch Dashboard
-              </a>
-              <NuxtLink
-                to="/"
-                class="px-8 py-4 bg-transparent border border-white/20 text-white font-semibold rounded-xl hover:bg-white/5 transition-colors"
-              >
-                Return Home
-              </NuxtLink>
-            </div>
-          </div>
-        </section>
-
-        <!-- Footer Info -->
-        <footer class="pt-10 pb-6 text-center text-gray-600 text-sm font-mono flex flex-col sm:flex-row justify-between items-center border-t border-white/5">
-          <p>© 2026 KURA FINANCE LLC. ALL RIGHTS RESERVED.</p>
-          <div class="flex items-center gap-2 mt-4 sm:mt-0">
-            <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-            SYSTEMS OPERATIONAL
-          </div>
-        </footer>
+  <div class="about-container text-white">
+    <!-- Hero Section -->
+    <section class="hero-section">
+      <div class="space-y-6">
+        <h1 class="hero-title">
+          Bridging the Gap Between Web3 and Traditional Finance
+        </h1>
+        <p class="hero-subtitle">
+          We don't follow trends, we only build and invest in practical tools we use every day.
+        </p>
       </div>
-    </main>
+    </section>
+
+    <!-- Mission Section -->
+    <section class="mission-section">
+      <h2 class="mission-title">Our Mission: Bridging the Gap Between Web3 and Traditional Finance</h2>
+      <p class="mission-text">
+        At Kura Finance, we believe that managing your assets across decentralized protocols and traditional bank accounts shouldn't require a dozen open tabs and complex spreadsheets. Our mission is to build the most intuitive, unified financial dashboard for the modern digital citizen.
+      </p>
+    </section>
+
+    <!-- Built for Utility Section -->
+    <section class="utility-section">
+      <h2 class="utility-title">Built for Utility, Not Speculation</h2>
+      <p class="utility-text">
+        We approach the Web3 and FinTech space with a builder's mindset. We are not day traders, nor do we build tools for short-term arbitrage. Our philosophy is simple: we look at what brings genuine value, we use the products ourselves, and we build infrastructure that we actually want to stick with for the long haul. Kura Finance was born out of this exact necessity—a practical solution for real-world financial management.
+      </p>
+    </section>
+
+    <!-- Forward-Looking Innovation Section -->
+    <section class="innovation-section">
+      <h2 class="innovation-title">Forward-Looking Innovation</h2>
+      <p class="innovation-text">
+        Beyond data aggregation, we are constantly exploring how blockchain technology can solve traditional pain points. With our upcoming blockchain notary features, we aim to leverage the immutability of decentralized networks to provide secure, verifiable proof of existence for critical legal and business documents.
+      </p>
+    </section>
+
+    <!-- Join the Journey Section -->
+    <section class="join-section">
+      <h2 class="join-title">Join the Journey</h2>
+      <p class="join-text">
+        Whether you are a developer, a freelancer, or an enterprise managing cross-border assets, Kura Finance is designed to bring clarity to your financial truth.
+      </p>
+    </section>
+
+    <!-- Founder Section -->
+    <section class="founder-section">
+      <div class="founder-card">
+        <div class="quote-accent"></div>
+        <div class="flex flex-col md:flex-row gap-8 md:gap-12">
+          <!-- Avatar -->
+          <div class="flex-shrink-0">
+            <img 
+              src="~/assets/avatar.jpg" 
+              alt="Rick Weng, Founder" 
+              class="w-32 h-32 md:w-40 md:h-40 rounded-2xl object-cover border-2 border-kura-primary/30"
+            />
+          </div>
+          <!-- Content -->
+          <div class="flex-1 space-y-5">
+            <h2 class="founder-heading">A Note from the Founder</h2>
+            <p class="founder-text">
+              When I started navigating the intersection of Web3 and traditional finance, I hit a wall. The industry is full of noise, chaos, and obsession with quick money. But as a developer managing cross-border assets, I don't need another complex trading terminal—I just need clarity.
+            </p>
+            <p class="founder-text">
+              I'm not a day trader, and I certainly don't call myself an arbitrageur. My philosophy is rooted in pure pragmatism: I observe markets, use products myself, and only commit to those that genuinely solve problems.
+            </p>
+            <p class="founder-text">
+              Kura Finance was born to solve my own pain point—getting my financial stack in order. It's infrastructure designed for developers, digital nomads, and enterprises that value signal over noise.
+            </p>
+            <div class="signature">
+              <span class="name">Rick Weng</span>
+              <span class="title">Founder, Kura Finance</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Timeline Section -->
+    <section class="timeline-section">
+      <h2 class="section-label">The Evolution</h2>
+      <div class="timeline-wrapper">
+        <div class="timeline">
+          <div
+            v-for="(item, index) in milestones"
+            :key="index"
+            class="timeline-item"
+          >
+            <div class="timeline-marker"></div>
+            <div class="timeline-content-wrapper">
+              <div class="timeline-header">
+                <h3 class="timeline-title">{{ item.title }}</h3>
+                <span class="timeline-time">{{ item.time }}</span>
+              </div>
+              <p class="timeline-description">{{ item.content }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Trust Footer -->
+    <section class="trust-footer">
+      <div class="trust-card">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+          <div>
+            <h3 class="trust-title">Built with Transparency</h3>
+            <p class="trust-desc">Learn how we safeguard your data compliance and security within the US legal framework.</p>
+          </div>
+          <NuxtLink to="/compliance" class="whitespace-nowrap px-6 py-2 bg-kura-primary hover:bg-kura-primary-light text-white font-semibold rounded-lg transition-colors">
+            Visit Trust Center
+          </NuxtLink>
+        </div>
+      </div>
+    </section>
   </div>
 </template>
 
 <script setup lang="ts">
-const capabilities = [
-  { title: 'Omnichain Tracking', description: 'Natively index balances across Ethereum, L2s, and alternative EVM networks seamlessly.', icon: '🌐' },
-  { title: 'Deterministic Analytics', description: 'Transform raw transaction data into actionable, historically accurate net-worth graphs.', icon: '📈' },
-  { title: 'TradFi Integration', description: 'Bank-grade read-only APIs securely fetch data from thousands of global financial institutions.', icon: '🏦' },
-  { title: 'Cryptographic Privacy', description: 'End-to-end encryption ensures your financial metadata remains strictly confidential.', icon: '🔐' },
-  { title: 'Real-Time Sync', description: 'Continuous block-monitoring and API polling for instantaneous portfolio valuation.', icon: '⚡' },
-  { title: 'Zero-Touch Architecture', description: 'A pure dashboard experience. No deposit addresses, no swap routers, zero custody.', icon: '🛡️' },
-];
+import { reactive } from 'vue'
 
-const techStack = ['Nuxt 3', 'Vue 3', 'Cloud Run', 'PostgreSQL', 'Docker', 'Tailwind CSS'];
+const milestones = reactive([
+  {
+    time: 'Phase 1: The Catalyst',
+    title: 'A Fragmented Financial Truth',
+    content: 'Facing financial data scattered across banks and multiple Web3 wallets, we decided to build a clean interface focused on practical integration, rejecting complexity and redundancy.',
+    type: 'info'
+  },
+  {
+    time: 'Phase 2: Building the Foundation',
+    title: 'Bridging Fiat & On-Chain Data',
+    content: 'Through integrating cutting-edge technology, we created a unified dashboard capable of securely reading on-chain assets while connecting traditional financial data.',
+    type: 'success'
+  },
+  {
+    time: 'Phase 3: The Horizon',
+    title: 'Immutable Proof of Existence',
+    content: 'In the future, we will launch a decentralized blockchain-based notary platform providing immutable timestamps and digital fingerprints for critical legal documents.',
+    type: 'warning'
+  }
+])
 </script>
+
+<style scoped>
+.about-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 80px 24px;
+}
+
+/* Hero Section */
+.hero-section {
+  text-align: center;
+  margin-bottom: 120px;
+}
+
+.hero-title {
+  font-size: clamp(2.5rem, 8vw, 3.5rem);
+  font-weight: 800;
+  line-height: 1.1;
+  background: linear-gradient(135deg, #fff 0%, #888 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-subtitle {
+  font-size: 1.25rem;
+  color: #a0a0a0;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* Mission Section */
+.mission-section {
+  margin-bottom: 100px;
+  padding: 40px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+}
+
+.mission-title {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: #ffffff;
+}
+
+.mission-text {
+  font-size: 1.05rem;
+  line-height: 1.8;
+  color: #c8c8c8;
+  margin: 0;
+}
+
+/* Utility Section */
+.utility-section {
+  margin-bottom: 100px;
+  padding: 40px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+}
+
+.utility-title {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: #ffffff;
+}
+
+.utility-text {
+  font-size: 1.05rem;
+  line-height: 1.8;
+  color: #c8c8c8;
+  margin: 0;
+}
+
+/* Innovation Section */
+.innovation-section {
+  margin-bottom: 100px;
+  padding: 40px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+}
+
+.innovation-title {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: #ffffff;
+}
+
+.innovation-text {
+  font-size: 1.05rem;
+  line-height: 1.8;
+  color: #c8c8c8;
+  margin: 0;
+}
+
+/* Join Section */
+.join-section {
+  margin-bottom: 100px;
+  padding: 40px;
+  background: rgba(24, 160, 88, 0.05);
+  border: 1px solid rgba(24, 160, 88, 0.2);
+  border-radius: 12px;
+}
+
+.join-title {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: #ffffff;
+}
+
+.join-text {
+  font-size: 1.05rem;
+  line-height: 1.8;
+  color: #c8c8c8;
+  margin: 0;
+}
+
+/* Founder Section */
+.founder-section {
+  margin-bottom: 160px;
+}
+
+.founder-card {
+  position: relative;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 48px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.quote-accent {
+  position: absolute;
+  left: 0;
+  top: 48px;
+  width: 4px;
+  height: 80px;
+  background: #18a058;
+  border-radius: 2px;
+}
+
+.founder-heading {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.founder-text {
+  font-size: 1.1rem;
+  line-height: 1.8;
+  color: #d1d1d1;
+}
+
+.signature {
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+.signature .name {
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-family: 'Georgia', serif;
+  font-style: italic;
+  color: #ffffff;
+}
+
+.signature .title {
+  color: #777;
+  font-size: 0.9rem;
+  letter-spacing: 1px;
+}
+
+/* Timeline Section */
+.timeline-section {
+  margin-bottom: 160px;
+}
+
+.section-label {
+  font-size: 2.5rem;
+  text-align: center;
+  margin-bottom: 64px;
+  font-weight: 700;
+}
+
+.timeline-wrapper {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.timeline {
+  position: relative;
+  padding-left: 30px;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(to bottom, #18a058, transparent);
+}
+
+.timeline-item {
+  position: relative;
+  margin-bottom: 40px;
+}
+
+.timeline-marker {
+  position: absolute;
+  left: -36px;
+  top: 0;
+  width: 12px;
+  height: 12px;
+  background: #18a058;
+  border-radius: 50%;
+  border: 3px solid #0f172a;
+}
+
+.timeline-content-wrapper {
+  padding-bottom: 16px;
+}
+
+.timeline-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+  gap: 16px;
+}
+
+.timeline-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0;
+}
+
+.timeline-time {
+  font-size: 0.9rem;
+  color: #18a058;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.timeline-description {
+  color: #999;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Trust Card */
+.trust-footer {
+  margin-bottom: 120px;
+}
+
+.trust-card {
+  border-radius: 12px;
+  background: rgba(24, 160, 88, 0.05);
+  border: 1px solid rgba(24, 160, 88, 0.2);
+  padding: 32px;
+}
+
+.trust-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 0;
+  color: #ffffff;
+}
+
+.trust-desc {
+  color: #777;
+  margin: 8px 0 0 0;
+  font-size: 0.95rem;
+}
+
+@media (max-width: 768px) {
+  .about-container {
+    padding: 60px 16px;
+  }
+
+  .hero-title {
+    font-size: 2rem;
+  }
+
+  .hero-section {
+    margin-bottom: 80px;
+  }
+
+  .mission-section,
+  .utility-section,
+  .innovation-section,
+  .join-section {
+    margin-bottom: 60px;
+    padding: 24px;
+  }
+
+  .mission-title,
+  .utility-title,
+  .innovation-title,
+  .join-title {
+    font-size: 1.5rem;
+  }
+
+  .mission-text,
+  .utility-text,
+  .innovation-text,
+  .join-text {
+    font-size: 0.95rem;
+  }
+
+  .founder-card {
+    padding: 24px;
+  }
+
+  .section-label {
+    font-size: 1.75rem;
+    margin-bottom: 40px;
+  }
+
+  .founder-section {
+    margin-bottom: 100px;
+  }
+
+  .timeline-section {
+    margin-bottom: 100px;
+  }
+
+  .trust-card {
+    padding: 24px;
+  }
+
+  .trust-title {
+    font-size: 1rem;
+  }
+}
+</style>

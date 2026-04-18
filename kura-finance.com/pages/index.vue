@@ -3,24 +3,17 @@ definePageMeta({
   layout: 'default'
 });
 
-import Header from '~/components/Header.vue';
 import HeroSection from '~/components/HeroSection.vue';
 import FeaturesSection from '~/components/FeaturesSection.vue';
-import Footer from '~/components/Footer.vue';
 </script>
 
 <template>
-  <div class="min-h-screen bg-kura-background text-white">
-    <!-- Background Ambient Glows -->
-    <div class="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] bg-kura-primary/10 blur-[150px] rounded-full pointer-events-none z-0" />
-    <div class="fixed bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-kura-secondary/10 blur-[150px] rounded-full pointer-events-none z-0" />
-
+  <div>
     <!-- Grid Background Pattern -->
     <div class="fixed inset-0 bg-[linear-gradient(rgba(255,255,255,.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.05)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none z-0" />
 
     <!-- Main Content -->
-    <div class="relative z-10">
-      <Header />
+    <div class="relative z-10 w-full">
       <HeroSection />
       <FeaturesSection />
 
@@ -46,8 +39,6 @@ import Footer from '~/components/Footer.vue';
           </div>
         </div>
       </section>
-
-      <Footer />
     </div>
   </div>
 </template>
