@@ -14,7 +14,6 @@ export default function RootHubPage() {
   const [authError, setAuthError] = useState<string | null>(null);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
 
-  const setAuthToken = useAppStore((state) => state.setAuthToken);
   const setPlaidLinkToken = useAppStore((state) => state.setPlaidLinkToken);
   const hydrateUserProfile = useAppStore((state) => state.hydrateUserProfile);
 
@@ -37,12 +36,10 @@ export default function RootHubPage() {
     setAuthError(null);
 
     try {
-      const authResult =
-        authMode === 'register'
-          ? await registerUser(email.trim(), password)
-          : await loginUser(email.trim(), password);
+      authMode === 'register'
+        ? await registerUser(email.trim(), password)
+        : await loginUser(email.trim(), password);
 
-      setAuthToken(authResult.token);
       setPlaidLinkToken(null);
       await hydrateUserProfile();
     } catch (error) {

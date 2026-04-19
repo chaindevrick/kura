@@ -54,8 +54,8 @@ export default function AccountsView({ variants, onConnectAccount }: AccountsVie
       throw new PlaidApiError('Please sign in to disconnect this account.', 401);
     }
 
-    await disconnectPlaidAccountApi(authToken, accountId);
-    await hydratePlaidFinanceData(authToken);
+    await disconnectPlaidAccountApi(accountId);
+    await hydratePlaidFinanceData();
   };
 
   const handleDisconnectBanking = async (accountId: string) => {
