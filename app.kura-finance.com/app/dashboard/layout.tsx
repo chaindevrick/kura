@@ -46,12 +46,12 @@ export default function DashboardLayout({
       <TopNav />
       
       {/* Main content area with Sidebar */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden w-full">
         {/* Sidebar - Fixed, non-scrollable */}
         <Sidebar />
         
         {/* Main content - Scrollable */}
-        <main className="relative z-30 flex-1 overflow-y-auto bg-gradient-to-br from-[#0B0B0F] to-[#1A1A24]/30">
+        <main className="relative z-30 flex-1 overflow-y-auto bg-gradient-to-br from-[#0B0B0F] to-[#1A1A24]/30 w-full">
           {children}
         </main>
       </div>
