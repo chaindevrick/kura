@@ -69,7 +69,7 @@ export default function DashboardPage() {
           <div>
             <p className="text-gray-400 text-sm font-medium mb-4">Accounts</p>
             <div className="space-y-3">
-              {accounts.slice(0, 4).map((account) => (
+              {accounts.map((account) => (
                 <div key={account.id} className="flex justify-between items-center py-2 border-b border-white/5 last:border-0">
                   <div>
                     <p className="text-white font-medium text-sm">{account.name}</p>
