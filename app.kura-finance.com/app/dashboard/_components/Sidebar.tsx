@@ -15,7 +15,7 @@ function NavLink({ href, label, isActive }: NavLinkProps) {
   return (
     <Link 
       href={href}
-      className={`px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
+      className={`block w-full px-4 py-3 rounded-lg transition-colors text-sm font-medium ${
         isActive 
           ? 'bg-[#8B5CF6]/10 text-[#8B5CF6]' 
           : 'text-gray-400 hover:bg-[#1A1A24] hover:text-white'
@@ -40,16 +40,16 @@ export default function Sidebar() {
   const isTaxCalculator = pathname.includes('/dashboard/tax-calculator');
 
   return (
-    <nav className="relative z-10 w-56 border-r border-[#1A1A24] bg-[#0B0B0F] py-6 px-3 flex flex-col gap-0 shrink-0 transition-all duration-300 ease-in-out overflow-y-auto h-full">
+    <nav className="relative z-10 w-56 border-r border-[#1A1A24] bg-[#0B0B0F] py-6 px-2 flex flex-col gap-0 shrink-0 transition-all duration-300 ease-in-out overflow-y-auto h-full">
       
       {/* Home */}
       <NavLink href="/dashboard" label="Home" isActive={isHome} />
       
       {/* Divider */}
-      <div className="my-4 border-t border-gray-800" />
+      <div className="my-3 border-t border-gray-800" />
 
       {/* Main Section */}
-      <div className="space-y-1 mb-4">
+      <div className="space-y-2 mb-3">
         <NavLink href="/dashboard/accounts" label="Accounts" isActive={isAccounts} />
         <NavLink href="/dashboard/transactions" label="Transactions" isActive={isTransactions} />
         <NavLink href="/dashboard/investment" label="Investment" isActive={isInvestment} />
@@ -57,10 +57,10 @@ export default function Sidebar() {
       </div>
 
       {/* Divider */}
-      <div className="my-4 border-t border-gray-800" />
+      <div className="my-3 border-t border-gray-800" />
 
       {/* Secondary Section */}
-      <div className="space-y-1">
+      <div className="space-y-2">
         <NavLink href="/dashboard/budget" label="Budget" isActive={isBudget} />
         <NavLink href="/dashboard/impermanent-loss" label="Impermanent Loss" isActive={isImpermanentLoss} />
         <NavLink href="/dashboard/tax-calculator" label="Tax Calculator" isActive={isTaxCalculator} />
