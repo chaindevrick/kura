@@ -42,6 +42,9 @@
               <NuxtLink to="/" class="text-sm text-kura-text-secondary hover:text-kura-text transition-colors">Kura APP</NuxtLink>
             </li>
             <li>
+              <NuxtLink to="/klhs" class="text-sm text-kura-text-secondary hover:text-kura-text transition-colors">KLHS</NuxtLink>
+            </li>
+            <li>
               <a href="" class="text-sm text-kura-text-secondary hover:text-kura-text transition-colors cursor-pointer">Kura Notary(Coming Soon)</a>
             </li>
           </ul>
