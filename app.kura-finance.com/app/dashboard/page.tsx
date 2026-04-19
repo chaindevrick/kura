@@ -1,9 +1,8 @@
 // src/app/dashboard/page.tsx
 "use client";
 
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import dynamic from 'next/dynamic';
-import { motion, AnimatePresence } from 'framer-motion';
 import AccountCarousel from './_components/AccountCarousel';
 import TransactionsModal from './_components/TransactionsModal';
 import { useFinanceStore } from '../store/useFinanceStore';
@@ -18,25 +17,16 @@ export default function DashboardPage() {
   const accounts = useFinanceStore(state => state.accounts);
   const setAccounts = useFinanceStore(state => state.setAccounts);
   const transactions = useFinanceStore(state => state.transactions);
-  const isAiEnabled = useFinanceStore(state => state.isAiOptedIn);
-  const toggleAiOptIn = useFinanceStore(state => state.toggleAiOptIn);
-  const aiInsights = useAppStore(state => state.aiInsights);
-  const messages = useAppStore(state => state.chatMessages);
-  const addChatMessage = useAppStore(state => state.addChatMessage);
   const authStatus = useAppStore(state => state.authStatus);
   const authToken = useAppStore(state => state.authToken);
 
   const [selectedAccountId, setSelectedAccountId] = useState<string>('all');
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isConnectModalOpen, setIsConnectModalOpen] = useState<boolean>(false);
-  const [isChatOpen, setIsChatOpen] = useState<boolean>(false);
-  const [inputText, setInputText] = useState('');
 
   const openConnectFlow = () => {
     setIsConnectModalOpen(true);
   };
-
-  const chatContainerRef = useRef<HTMLDivElement>(null);
 
   const totalBalance = useMemo(() => {
     return accounts.reduce((acc, curr) => {
@@ -62,20 +52,7 @@ export default function DashboardPage() {
     return transactions.filter(tx => tx.accountId === selectedAccountId);
   }, [transactions, selectedAccountId]);
 
-  useEffect(() => {
-    if (chatContainerRef.current) {
-      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
-    }
-  }, [messages, isChatOpen]);
 
-  const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inputText.trim()) return;
-
-    const newUserMsg = { id: Date.now().toString(), role: 'user' as const, content: inputText };
-    addChatMessage(newUserMsg);
-    setInputText('');
-  };
 
   const handleAccountsReorder = async (nextAccounts: typeof accounts) => {
     setAccounts(nextAccounts);
@@ -120,28 +97,11 @@ export default function DashboardPage() {
       <div className="mt-4">
         <div className="flex justify-between items-center mb-4 px-2">
           <h2 className="text-xl font-bold text-white">Activity</h2>
-          
-          <div className="flex items-center gap-3 bg-[#1A1A24] px-4 py-2 rounded-full border border-white/5 shadow-sm">
-            <span className={`text-sm font-medium transition-colors ${isAiEnabled ? 'text-[#A78BFA]' : 'text-gray-400'}`}>
-              ✨ Kura AI Insights
-            </span>
-            <button
-              onClick={() => {
-                toggleAiOptIn();
-                if (isChatOpen) setIsChatOpen(false);
-              }}
-              className={`w-11 h-6 rounded-full transition-colors relative focus:outline-none ${
-                isAiEnabled ? 'bg-[#8B5CF6]' : 'bg-[#0B0B0F] border border-white/10'
-              }`}
-            >
-              <div className={`w-4 h-4 rounded-full bg-white absolute top-1 transition-transform duration-300 shadow-md ${isAiEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
-            </button>
-          </div>
         </div>
 
-        <div className={`grid grid-cols-1 gap-6 transition-all duration-500 ${isAiEnabled ? 'lg:grid-cols-3' : ''}`}>
+        <div className="grid grid-cols-1 gap-6">
           
-          <div className={`rounded-3xl bg-[#1A1A24] border border-white/5 p-8 ${isAiEnabled ? 'lg:col-span-2' : 'col-span-1'} flex flex-col h-[400px]`}>
+          <div className="rounded-3xl bg-[#1A1A24] border border-white/5 p-8 flex flex-col h-[400px]">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-lg font-bold text-white">
                 {transactionHeader}
@@ -194,73 +154,7 @@ export default function DashboardPage() {
             </button>
           </div>
 
-          {isAiEnabled && (
-            <div className="lg:col-span-1 rounded-3xl bg-gradient-to-br from-[#1A1A24] to-[#0B0B0F] border border-[#8B5CF6]/20 shadow-[0_0_30px_rgba(139,92,246,0.1)] relative overflow-hidden h-[400px] flex flex-col">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-[#8B5CF6]/10 blur-3xl rounded-full pointer-events-none" />
-              
-              <AnimatePresence mode="wait">
-                {!isChatOpen ? (
-                  <motion.div key="insights" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.3 }} className="flex flex-col h-full p-8">
-                    <div className="flex items-center gap-3 mb-6 relative z-10 shrink-0">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#8B5CF6] to-[#A78BFA] flex items-center justify-center shadow-lg">
-                        <span className="text-sm">✨</span>
-                      </div>
-                      <h3 className="text-lg font-bold text-white">AI Analysis</h3>
-                    </div>
-                    <div className="space-y-6 relative z-10 flex-1 overflow-y-auto pr-2 hide-scrollbar">
-                      {aiInsights.length > 0 ? (
-                        aiInsights.map((insight, index) => (
-                          <React.Fragment key={insight.id}>
-                            <div>
-                              <div className="text-xs text-[#A78BFA] font-bold uppercase tracking-wider mb-2">{insight.title}</div>
-                              <p className="text-sm text-gray-300 leading-relaxed">{insight.content}</p>
-                            </div>
-                            {index < aiInsights.length - 1 && <div className="h-px w-full bg-white/5" />}
-                          </React.Fragment>
-                        ))
-                      ) : (
-                        <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.02] p-5 text-sm text-gray-500">
-                          AI insights will appear here once the backend returns personalized analysis.
-                        </div>
-                      )}
-                    </div>
-                    <button onClick={() => setIsChatOpen(true)} className="w-full mt-6 py-3.5 rounded-xl bg-[#8B5CF6]/10 text-[#A78BFA] text-sm font-medium hover:bg-[#8B5CF6]/20 transition-colors border border-[#8B5CF6]/30 relative z-10 shrink-0">
-                      Ask Kura AI
-                    </button>
-                  </motion.div>
-                ) : (
-                  <motion.div key="chat" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.3 }} className="flex flex-col h-full">
-                    <div className="p-4 border-b border-white/5 flex items-center gap-3 shrink-0 bg-[#1A1A24]/50 backdrop-blur-md z-10">
-                      <button onClick={() => setIsChatOpen(false)} className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-colors">←</button>
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-[#8B5CF6] to-[#A78BFA] flex items-center justify-center shadow-[0_0_10px_rgba(139,92,246,0.4)]"><span className="text-[10px]">✨</span></div>
-                        <span className="font-bold text-white text-sm">Kura AI</span>
-                      </div>
-                    </div>
-                    <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-6 space-y-6 hide-scrollbar relative z-10">
-                      {messages.length > 0 ? (
-                        messages.map((msg) => (
-                          <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${msg.role === 'user' ? 'bg-[#8B5CF6] text-white rounded-br-sm' : 'bg-white/5 text-gray-300 border border-white/5 rounded-bl-sm'}`}>{msg.content}</div>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="flex h-full items-center justify-center text-center text-gray-500 text-sm px-6">
-                          No chat history yet. Messages will appear here after backend data is available.
-                        </div>
-                      )}
-                    </div>
-                    <div className="p-4 pt-2 shrink-0 bg-gradient-to-t from-[#0B0B0F] to-transparent z-10">
-                      <form onSubmit={handleSendMessage} className="relative flex items-center">
-                        <input type="text" name="finance-chat" autoComplete="off" placeholder="Ask about your finances..." value={inputText} onChange={(e) => setInputText(e.target.value)} className="w-full bg-[#1A1A24] border border-white/10 rounded-full py-3 pl-5 pr-12 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:border-[#8B5CF6]/50 focus:ring-1 focus:ring-[#8B5CF6]/50 transition-all shadow-inner" />
-                        <button type="submit" disabled={!inputText.trim()} className="absolute right-2 w-8 h-8 rounded-full bg-[#8B5CF6] flex items-center justify-center text-white disabled:opacity-50 disabled:bg-gray-700 transition-colors">↑</button>
-                      </form>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          )}
+
         </div>
       </div>
 

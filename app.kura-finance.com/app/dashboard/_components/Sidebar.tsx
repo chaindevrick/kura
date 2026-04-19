@@ -67,16 +67,6 @@ export default function Sidebar() {
         </span>
       </Link>
 
-      {/* Kura AI (底部懸浮) */}
-      <button className="flex items-center p-3 rounded-xl text-gray-400 hover:bg-[#1A1A24] hover:text-white transition-colors w-full relative mt-auto border border-transparent hover:border-[#1A1A24]">
-        <div className="w-8 flex justify-center items-center shrink-0">
-          <span className="text-xl text-[#A78BFA]">✨</span>
-        </div>
-        <span className="ml-3 text-sm font-medium whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-          Kura AI
-        </span>
-      </button>
-
     </nav>
   );
 }
