@@ -4,7 +4,7 @@
       <!-- Header -->
       <div class="mb-12">
         <h1 class="text-4xl md:text-5xl font-bold mb-4 text-kura-text">Trust & Security Center</h1>
-        <p class="text-kura-text-secondary text-lg">At Kura Finance, we build with enterprise-grade security and transparent compliance from day one.</p>
+        <p class="text-kura-text-secondary text-lg">At Kura Finance, we build with enterprise-grade security, cryptographic privacy, and absolute regulatory clarity from day one.</p>
       </div>
 
       <!-- Content -->
@@ -29,37 +29,73 @@ Wilmington, DE 19801
           </div>
         </section>
 
-        <!-- Infrastructure Security -->
+        <!-- Cryptographic Privacy & Infrastructure -->
         <section>
-          <h2 class="text-2xl font-bold text-kura-text mb-4">Infrastructure Security</h2>
+          <h2 class="text-2xl font-bold text-kura-text mb-4">Cryptographic Privacy & Infrastructure</h2>
           <div class="space-y-4">
             <div>
-              <h3 class="text-lg font-semibold text-kura-text mb-2">Encryption</h3>
+              <h3 class="text-lg font-semibold text-kura-text mb-2">Non-Custodial Architecture:</h3>
               <p class="text-kura-text-secondary leading-relaxed">
-                All data in transit is encrypted using TLS 1.2/1.3. Data at rest is secured using AES-256 encryption.
+                We are a software infrastructure provider, not a custodian. Our system architecture is mathematically incapable of moving, trading, or accessing the underlying funds in your connected bank accounts or Web3 wallets.
               </p>
             </div>
             <div>
-              <h3 class="text-lg font-semibold text-kura-text mb-2">Zero-Trust Architecture</h3>
+              <h3 class="text-lg font-semibold text-kura-text mb-2">Zero-Knowledge (ZK) Oracle (KLHS):</h3>
               <p class="text-kura-text-secondary leading-relaxed">
-                We implement strict access controls and do not store sensitive API keys or private keys on client devices.
+                When interacting with DeFi protocols via the Kura Liquidity Health Score, we employ Zero-Knowledge (ZK) proofs. Protocols only receive cryptographically verified risk attestations (e.g., boolean values or score brackets). Your raw fiat balances, bank account numbers, and full transaction history are never broadcasted on-chain or shared with third-party protocols.
               </p>
             </div>
             <div>
-              <h3 class="text-lg font-semibold text-kura-text mb-2">Non-Custodial</h3>
+              <h3 class="text-lg font-semibold text-kura-text mb-2">Notary Hash Isolation:</h3>
               <p class="text-kura-text-secondary leading-relaxed">
-                Our system architecture is mathematically incapable of moving your funds.
+                For Kura Notary services, we process and store only the SHA-256 cryptographic hashes of your documents. The actual contents and files never leave your local environment and are never stored on our servers.
+              </p>
+            </div>
+            <div>
+              <h3 class="text-lg font-semibold text-kura-text mb-2">Encryption Standards:</h3>
+              <p class="text-kura-text-secondary leading-relaxed">
+                All data in transit is encrypted using TLS 1.2/1.3. Internal data at rest is secured using AES-256 encryption with strict zero-trust access controls.
               </p>
             </div>
           </div>
         </section>
 
-        <!-- Compliance Stance -->
+        <!-- Identity & Data Verification (KDID) -->
         <section>
-          <h2 class="text-2xl font-bold text-kura-text mb-4">Compliance Stance</h2>
-          <p class="text-kura-text-secondary leading-relaxed">
-            We are committed to operating within the legal frameworks of the United States. While we are a non-custodial software provider, we strictly adhere to international sanctions and do not provide services to entities located in comprehensively sanctioned jurisdictions (OFAC).
-          </p>
+          <h2 class="text-2xl font-bold text-kura-text mb-4">Identity & Data Verification (KDID)</h2>
+          <div class="space-y-4">
+            <div>
+              <h3 class="text-lg font-semibold text-kura-text mb-2">Institutional KYC Partners:</h3>
+              <p class="text-kura-text-secondary leading-relaxed">
+                To maintain a Sybil-resistant ecosystem and issue Kura Decentralized IDs (KDID), we partner with top-tier, globally compliant identity verification providers (e.g., Sumsub).
+              </p>
+            </div>
+            <div>
+              <h3 class="text-lg font-semibold text-kura-text mb-2">Data Minimization:</h3>
+              <p class="text-kura-text-secondary leading-relaxed">
+                Kura Finance does not directly store your raw biometric data or physical ID scans on our primary databases. We only retain the cryptographic verification status and the corresponding DID identifier.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Regulatory Framework & Compliance Stance -->
+        <section>
+          <h2 class="text-2xl font-bold text-kura-text mb-4">Regulatory Framework & Compliance Stance</h2>
+          <div class="space-y-4">
+            <div>
+              <h3 class="text-lg font-semibold text-kura-text mb-2">FCRA Exemption (Not a Credit Bureau):</h3>
+              <p class="text-kura-text-secondary leading-relaxed">
+                Kura Finance LLC is not a Consumer Reporting Agency (CRA) under the Fair Credit Reporting Act (FCRA). KLHS is an on-chain liquidity metric built exclusively for Decentralized Finance (DeFi) smart contracts, not for traditional consumer credit, housing, or employment decisions.
+              </p>
+            </div>
+            <div>
+              <h3 class="text-lg font-semibold text-kura-text mb-2">Global Sanctions (OFAC) Compliance:</h3>
+              <p class="text-kura-text-secondary leading-relaxed">
+                We are committed to operating within the legal frameworks of the United States. We strictly adhere to international sanctions and utilize wallet-screening APIs to block addresses associated with illicit activities or comprehensively sanctioned jurisdictions (OFAC) from utilizing our Oracle services.
+              </p>
+            </div>
+          </div>
         </section>
       </div>
 
