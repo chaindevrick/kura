@@ -55,7 +55,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4 w-full mx-2">
         
         {/* Total Assets Card */}
-        <div className="rounded-2xl bg-[#1A1A24] border border-white/5 p-4 flex flex-col justify-between aspect-square w-full">
+        <div className="rounded-2xl bg-[#1A1A24] border border-white/5 p-4 flex flex-col justify-between h-48 w-full">
           <div>
             <p className="text-gray-400 text-sm font-medium mb-2">Total Assets</p>
             <h2 className="text-4xl font-bold text-white">${totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h2>
@@ -63,7 +63,7 @@ export default function DashboardPage() {
           
           {/* Chart */}
           {chartData.length > 0 ? (
-            <div className="h-32 -mx-8 -mb-8 flex items-end">
+            <div className="h-20 -mx-8 -mb-8 flex items-end">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
@@ -84,14 +84,14 @@ export default function DashboardPage() {
               </ResponsiveContainer>
             </div>
           ) : (
-            <div className="space-y-2 mt-auto">
+            <div className="space-y-1 mt-auto">
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500">Total Accounts</span>
                 <span className="text-white font-medium">{accounts.length}</span>
               </div>
               <button
                 onClick={openConnectFlow}
-                className="w-full mt-4 py-2.5 rounded-lg bg-[#8B5CF6] hover:bg-[#8B5CF6]/90 text-white text-sm font-medium transition-colors"
+                className="w-full mt-2 py-2 rounded-lg bg-[#8B5CF6] hover:bg-[#8B5CF6]/90 text-white text-sm font-medium transition-colors"
               >
                 Connect Account
               </button>
@@ -100,12 +100,12 @@ export default function DashboardPage() {
         </div>
 
         {/* Accounts Card */}
-        <div className="rounded-2xl bg-[#1A1A24] border border-white/5 p-4 flex flex-col justify-between aspect-square overflow-y-auto w-full">
+        <div className="rounded-2xl bg-[#1A1A24] border border-white/5 p-4 flex flex-col justify-between h-48 overflow-y-auto w-full">
           <div>
-            <p className="text-gray-400 text-sm font-medium mb-4">Accounts</p>
-            <div className="space-y-3">
+            <p className="text-gray-400 text-sm font-medium mb-2">Accounts</p>
+            <div className="space-y-1">
               {accounts.map((account) => (
-                <div key={account.id} className="flex justify-between items-center py-2 border-b border-white/5 last:border-0">
+                <div key={account.id} className="flex justify-between items-center py-1 border-b border-white/5 last:border-0">
                   <div>
                     <p className="text-white font-medium text-sm">{account.name}</p>
                     <p className="text-gray-500 text-xs">{account.type}</p>
@@ -117,10 +117,10 @@ export default function DashboardPage() {
               ))}
             </div>
           </div>
-          <div className="mt-4 pt-4 border-t border-white/5">
+          <div className="mt-2 pt-2 border-t border-white/5">
             <button
               onClick={openConnectFlow}
-              className="w-full py-2.5 rounded-lg bg-[#8B5CF6] hover:bg-[#8B5CF6]/90 text-white text-sm font-medium transition-colors"
+              className="w-full py-1.5 rounded-lg bg-[#8B5CF6] hover:bg-[#8B5CF6]/90 text-white text-sm font-medium transition-colors"
             >
               Connect Account
             </button>
@@ -133,7 +133,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6 w-full mx-2">
         
         {/* Investment Card */}
-        <div className="rounded-2xl bg-[#1A1A24] border border-white/5 p-4 flex flex-col justify-between aspect-square w-full">
+        <div className="rounded-2xl bg-[#1A1A24] border border-white/5 p-4 flex flex-col justify-between h-40 w-full">
           <div>
             <p className="text-gray-400 text-sm font-medium mb-2">Investment</p>
             <h3 className="text-3xl font-bold text-white mb-4">$0.00</h3>
@@ -145,7 +145,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Crypto Card */}
-        <div className="rounded-2xl bg-[#1A1A24] border border-white/5 p-4 flex flex-col justify-between aspect-square w-full">
+        <div className="rounded-2xl bg-[#1A1A24] border border-white/5 p-4 flex flex-col justify-between h-40 w-full">
           <div>
             <p className="text-gray-400 text-sm font-medium mb-2">Crypto</p>
             <h3 className="text-3xl font-bold text-white mb-4">$0.00</h3>
@@ -157,7 +157,7 @@ export default function DashboardPage() {
         </div>
 
         {/* DeFi Protocol Card */}
-        <div className="rounded-2xl bg-[#1A1A24] border border-white/5 p-4 flex flex-col justify-between aspect-square w-full">
+        <div className="rounded-2xl bg-[#1A1A24] border border-white/5 p-4 flex flex-col justify-between h-40 w-full">
           <div>
             <p className="text-gray-400 text-sm font-medium mb-2">DeFi Protocol</p>
             <h3 className="text-3xl font-bold text-white mb-4">$0.00</h3>
@@ -180,7 +180,7 @@ export default function DashboardPage() {
           ) : (
             <div className="space-y-0">
               {recentTransactions.map((transaction, index) => (
-                <div key={transaction.id} className={`flex justify-between items-center py-4 ${index !== recentTransactions.length - 1 ? 'border-b border-white/5' : ''}`}>
+                <div key={transaction.id} className={`flex justify-between items-center py-2 ${index !== recentTransactions.length - 1 ? 'border-b border-white/5' : ''}`}>
                   <div className="flex-1">
                     <p className="text-white font-medium text-sm">{transaction.merchant}</p>
                     <div className="flex gap-3 mt-1">
