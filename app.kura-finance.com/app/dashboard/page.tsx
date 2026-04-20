@@ -43,7 +43,7 @@ export default function DashboardPage() {
   }, [assetHistory]);
 
   return (
-    <div className="w-full pb-10 px-8 pt-10 max-w-6xl mx-auto">
+    <div className="w-full pb-8 px-8 pt-8 max-w-6xl mx-auto">
       {isConnectModalOpen && (
         <ConnectAccountModal
           isOpen={isConnectModalOpen}
@@ -52,10 +52,10 @@ export default function DashboardPage() {
       )}
 
       {/* Top Section - Total Assets & Accounts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5 w-full mx-3">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4 w-full mx-2">
         
         {/* Total Assets Card */}
-        <div className="rounded-2xl bg-[#1A1A24] border border-white/5 p-6 flex flex-col justify-between aspect-square w-full">
+        <div className="rounded-2xl bg-[#1A1A24] border border-white/5 p-4 flex flex-col justify-between aspect-square w-full">
           <div>
             <p className="text-gray-400 text-sm font-medium mb-2">Total Assets</p>
             <h2 className="text-4xl font-bold text-white">${totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h2>
@@ -100,7 +100,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Accounts Card */}
-        <div className="rounded-2xl bg-[#1A1A24] border border-white/5 p-6 flex flex-col justify-between aspect-square overflow-y-auto w-full">
+        <div className="rounded-2xl bg-[#1A1A24] border border-white/5 p-4 flex flex-col justify-between aspect-square overflow-y-auto w-full">
           <div>
             <p className="text-gray-400 text-sm font-medium mb-4">Accounts</p>
             <div className="space-y-3">
@@ -130,10 +130,10 @@ export default function DashboardPage() {
       </div>
 
       {/* Bottom Section - Investment, Crypto, DeFi Protocol */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-6 w-full mx-3">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6 w-full mx-2">
         
         {/* Investment Card */}
-        <div className="rounded-2xl bg-[#1A1A24] border border-white/5 p-6 flex flex-col justify-between aspect-square w-full">
+        <div className="rounded-2xl bg-[#1A1A24] border border-white/5 p-4 flex flex-col justify-between aspect-square w-full">
           <div>
             <p className="text-gray-400 text-sm font-medium mb-2">Investment</p>
             <h3 className="text-3xl font-bold text-white mb-4">$0.00</h3>
@@ -145,7 +145,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Crypto Card */}
-        <div className="rounded-2xl bg-[#1A1A24] border border-white/5 p-6 flex flex-col justify-between aspect-square w-full">
+        <div className="rounded-2xl bg-[#1A1A24] border border-white/5 p-4 flex flex-col justify-between aspect-square w-full">
           <div>
             <p className="text-gray-400 text-sm font-medium mb-2">Crypto</p>
             <h3 className="text-3xl font-bold text-white mb-4">$0.00</h3>
@@ -157,7 +157,7 @@ export default function DashboardPage() {
         </div>
 
         {/* DeFi Protocol Card */}
-        <div className="rounded-2xl bg-[#1A1A24] border border-white/5 p-6 flex flex-col justify-between aspect-square w-full">
+        <div className="rounded-2xl bg-[#1A1A24] border border-white/5 p-4 flex flex-col justify-between aspect-square w-full">
           <div>
             <p className="text-gray-400 text-sm font-medium mb-2">DeFi Protocol</p>
             <h3 className="text-3xl font-bold text-white mb-4">$0.00</h3>
@@ -172,7 +172,7 @@ export default function DashboardPage() {
 
       {/* Recent Transactions Section */}
       <div className="w-full">
-        <div className="rounded-2xl bg-[#1A1A24] border border-white/5 p-6 w-full mx-3">
+        <div className="rounded-2xl bg-[#1A1A24] border border-white/5 p-4 w-full mx-2">
           <h3 className="text-xl font-bold text-white mb-6">Recent Transactions</h3>
           
           {recentTransactions.length === 0 ? (
