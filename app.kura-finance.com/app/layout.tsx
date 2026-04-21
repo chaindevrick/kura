@@ -61,11 +61,17 @@ export default function RootLayout({
         <meta name="theme-color" content="#8B5CF6" />
 
         {/* CSP is set via middleware.ts - no need for meta tag */}
-        {/* Load Plaid Link script once globally to prevent duplication */}
+        {/* Load Plaid Link script once globally with proper error handling */}
         <Script
           src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"
-          strategy="afterInteractive"
+          strategy="beforeInteractive"
           crossOrigin="anonymous"
+          onError={() => {
+            console.error('[Layout] Failed to load Plaid SDK from CDN');
+          }}
+          onLoad={() => {
+            console.log('[Layout] Plaid SDK loaded successfully');
+          }}
         />
       </head>
       <body className="w-full h-screen bg-[#0B0B0F] text-white flex flex-col antialiased selection:bg-[#8B5CF6]/30">

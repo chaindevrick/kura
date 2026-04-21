@@ -20,6 +20,38 @@ interface ConnectAccountModalProps {
   onClose: () => void;
 }
 
+interface PlaidLinkError {
+  display_message?: string;
+  error_code?: string;
+  error_message?: string;
+}
+
+/**
+ * Safe wrapper for Plaid link with error handling
+ */
+function useSafePlaidLink(
+  token: string | null,
+  onSuccess: (publicToken: string, metadata: PlaidLinkOnSuccessMetadata) => void,
+  onExit?: (error: PlaidLinkError | null) => void
+) {
+  const [error, setError] = useState<Error | null>(null);
+
+  const result = usePlaidLink({
+    token: token || null,
+    onSuccess,
+    onExit: (plaidError: PlaidLinkError | null) => {
+      if (plaidError) {
+        const errorMessage = plaidError.display_message || plaidError.error_message || 'Plaid error';
+        setError(new Error(errorMessage));
+        console.error('[useSafePlaidLink] Plaid exited with error:', plaidError);
+      }
+      onExit?.(plaidError);
+    },
+  });
+
+  return { ...result, error };
+}
+
 export default function ConnectAccountModal({ isOpen, onClose }: ConnectAccountModalProps) {
   const [mounted, setMounted] = useState(false);
   const [isConnecting, setIsConnecting] = useState<'plaid' | 'reown' | null>(null);
@@ -32,30 +64,11 @@ export default function ConnectAccountModal({ isOpen, onClose }: ConnectAccountM
   const hydratePlaidFinanceData = useFinanceStore((state) => state.hydratePlaidFinanceData);
   const { connectAsync, connectors } = useConnect();
 
+  // Mount state for SSR safety
   useEffect(() => {
     const timer = setTimeout(() => setMounted(true), 0);
     return () => clearTimeout(timer);
   }, []);
-
-  const fetchPlaidLinkToken = useCallback(
-    async () => {
-      try {
-        setPlaidError(null);
-        const result = await createPlaidLinkToken();
-        setPlaidLinkToken(result.link_token);
-      } catch (error) {
-        const message =
-          error instanceof PlaidApiError ? error.message : 'Failed to get Plaid link token.';
-        setPlaidError(message);
-      }
-    },
-    [setPlaidLinkToken]
-  );
-
-  useEffect(() => {
-    if (!isOpen || linkToken) return;
-    void fetchPlaidLinkToken();
-  }, [fetchPlaidLinkToken, isOpen, linkToken]);
 
   const onPlaidSuccess = useCallback(
     async (publicToken: string, metadata: PlaidLinkOnSuccessMetadata) => {
@@ -80,6 +93,7 @@ export default function ConnectAccountModal({ isOpen, onClose }: ConnectAccountM
         const message =
           error instanceof PlaidApiError ? error.message : 'Failed to exchange Plaid token.';
         setPlaidError(message);
+        console.error('[ConnectAccountModal] Error exchanging Plaid token:', error);
       } finally {
         setIsExchangingToken(false);
       }
@@ -87,18 +101,57 @@ export default function ConnectAccountModal({ isOpen, onClose }: ConnectAccountM
     [authToken, hydratePlaidFinanceData, onClose]
   );
 
-  const { open: openPlaid, ready: isPlaidReady } = usePlaidLink({
-    token: linkToken || null,
-    onSuccess: (publicToken, metadata) => {
-      void onPlaidSuccess(publicToken, metadata);
+  // Use safe Plaid link with error handling
+  const { open: openPlaid, ready: isPlaidReady, error: plaidInitError } = useSafePlaidLink(
+    linkToken,
+    onPlaidSuccess,
+    (err) => {
+      if (err) {
+        console.error('[ConnectAccountModal] Plaid exited with error:', err);
+        setPlaidError(`Plaid error: ${err.display_message || 'An error occurred'}`);
+      }
+    }
+  );
+
+  const fetchPlaidLinkToken = useCallback(
+    async () => {
+      try {
+        setPlaidError(null);
+        const result = await createPlaidLinkToken();
+        setPlaidLinkToken(result.link_token);
+      } catch (error) {
+        const message =
+          error instanceof PlaidApiError ? error.message : 'Failed to get Plaid link token.';
+        setPlaidError(message);
+        console.error('[ConnectAccountModal] Error fetching Plaid link token:', error);
+      }
     },
-  });
+    [setPlaidLinkToken]
+  );
+
+  useEffect(() => {
+    if (!isOpen || linkToken) return;
+    void fetchPlaidLinkToken();
+  }, [fetchPlaidLinkToken, isOpen, linkToken]);
+
+  // Log initialization errors
+  useEffect(() => {
+    if (plaidInitError) {
+      console.error('[ConnectAccountModal] Plaid initialization error:', plaidInitError);
+      setPlaidError('Plaid SDK initialization failed. Please refresh the page.');
+    }
+  }, [plaidInitError]);
 
   const handlePlaidConnect = async () => {
     setPlaidError(null);
 
     if (!authToken) {
       setPlaidError('Please sign in first.');
+      return;
+    }
+
+    if (plaidInitError) {
+      setPlaidError('Plaid SDK failed to initialize. Please refresh the page.');
       return;
     }
 
@@ -111,12 +164,17 @@ export default function ConnectAccountModal({ isOpen, onClose }: ConnectAccountM
     }
 
     if (isPlaidReady) {
-      openPlaid();
+      try {
+        openPlaid();
+      } catch (error) {
+        console.error('[ConnectAccountModal] Error opening Plaid:', error);
+        setPlaidError('Failed to open Plaid Link. Please try again.');
+      }
       setIsConnecting(null);
       return;
     }
 
-    setPlaidError('Plaid is still initializing. Please try again in a second.');
+    setPlaidError('Plaid is still initializing. Please try again in a moment.');
     setIsConnecting(null);
   };
 
