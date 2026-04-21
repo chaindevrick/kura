@@ -18,7 +18,7 @@ export function PlaidProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // Check if Plaid is already loaded
-    if (typeof window !== 'undefined' && (window as any).Plaid) {
+    if (typeof window !== 'undefined' && window.Plaid) {
       console.log('[PlaidProvider] Plaid SDK already loaded');
       setIsPlaidReady(true);
       return;
@@ -26,7 +26,7 @@ export function PlaidProvider({ children }: { children: ReactNode }) {
 
     // Wait for Plaid to load
     const checkPlaidLoaded = () => {
-      if ((window as any).Plaid) {
+      if (window.Plaid) {
         console.log('[PlaidProvider] Plaid SDK detected');
         setIsPlaidReady(true);
         return true;
@@ -58,7 +58,7 @@ export function PlaidProvider({ children }: { children: ReactNode }) {
     // Also listen for script load events
     const handleScriptLoad = () => {
       console.log('[PlaidProvider] Script load event detected');
-      if ((window as any).Plaid) {
+      if (window.Plaid) {
         setIsPlaidReady(true);
         clearInterval(checkInterval);
       }
