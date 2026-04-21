@@ -6,7 +6,7 @@ import Web3ModalProvider from '@/context/Web3ModalProvider';
 import { PlaidProvider } from '@/context/PlaidProvider';
 
 export const metadata: Metadata = {
-  metadataBase: new URL('http://localhost:3000'),
+  metadataBase: new URL('https://kura-finance.com'),
   title: "Kura | One app to manage your all financial from tradfi to crypto.",
   description: "Kura | One app to manage your all financial from tradfi to crypto.",
   keywords: ["finance", "web3", "crypto", "assets", "dashboard"],
@@ -62,16 +62,10 @@ export default function RootLayout({
         <meta name="theme-color" content="#8B5CF6" />
 
         {/* CSP is set via middleware.ts - no need for meta tag */}
-        {/* Load Plaid Link script once globally with proper error handling */}
+        {/* Load Plaid Link script globally - PlaidProvider handles detection */}
         <Script
           src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"
           strategy="beforeInteractive"
-          onError={() => {
-            console.error('[Layout] Failed to load Plaid SDK from CDN');
-          }}
-          onLoad={() => {
-            console.log('[Layout] Plaid SDK loaded successfully');
-          }}
         />
       </head>
       <body className="w-full h-screen bg-[#0B0B0F] text-white flex flex-col antialiased selection:bg-[#8B5CF6]/30">
