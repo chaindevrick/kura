@@ -8,6 +8,7 @@ export interface Account {
   balance: number;
   type: 'checking' | 'saving' | 'credit' | 'crypto';
   logo: string;
+  mask?: string; // 帳號末 4 碼（部分機構不提供）
 }
 
 export interface Transaction {

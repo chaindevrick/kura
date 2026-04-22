@@ -105,41 +105,50 @@ export default function DashboardPage() {
           <div>
             <p className="text-gray-400 text-xs sm:text-sm lg:text-base font-medium mb-2 sm:mb-3">Accounts</p>
             <div className="space-y-1 sm:space-y-2">
-              {accounts.map((account) => (
-                <div key={account.id} className="flex justify-between items-center py-2 sm:py-2.5 border-b border-white/5 last:border-0 gap-2">
-                  {/* Account Logo or Initial */}
-                  <div className="w-7 sm:w-8 h-7 sm:h-8 flex-shrink-0 rounded-full bg-white flex items-center justify-center overflow-hidden">
-                    {account.logo ? (
-                      <Image
-                        src={account.logo}
-                        alt={account.name}
-                        width={32}
-                        height={32}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          // Hide image on error
-                          e.currentTarget.style.display = 'none';
-                        }}
-                      />
-                    ) : null}
-                    {!account.logo && (
-                      <span className="text-gray-900 text-[10px] sm:text-xs font-bold">
-                        {account.name.charAt(0).toUpperCase()}
-                      </span>
-                    )}
+              {accounts.map((account) => {
+                const typeLabel: Record<string, string> = {
+                  checking: 'Checking',
+                  saving: 'Savings',
+                  credit: 'Credit Card',
+                  crypto: 'Crypto',
+                };
+                const accountTypeLabel = typeLabel[account.type] ?? account.type;
+                const accountDisplayName = account.mask
+                  ? `${accountTypeLabel} ••••${account.mask}`
+                  : accountTypeLabel;
+
+                return (
+                  <div key={account.id} className="flex justify-between items-center py-2 sm:py-2.5 border-b border-white/5 last:border-0 gap-2">
+                    {/* Account Logo or Initial */}
+                    <div className="w-7 sm:w-8 h-7 sm:h-8 flex-shrink-0 rounded-full bg-white flex items-center justify-center overflow-hidden">
+                      {account.logo ? (
+                        <Image
+                          src={account.logo}
+                          alt={accountDisplayName}
+                          width={32}
+                          height={32}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      ) : null}
+                      {!account.logo && (
+                        <span className="text-gray-900 text-[10px] sm:text-xs font-bold">
+                          {accountTypeLabel.charAt(0).toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+                    {/* Account Type + Mask and Balance */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white font-medium text-xs sm:text-sm truncate">{accountDisplayName}</p>
+                    </div>
+                    <p className={`font-mono font-medium text-xs sm:text-sm flex-shrink-0 ${account.type === 'credit' ? 'text-red-400' : 'text-green-400'}`}>
+                      ${account.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </p>
                   </div>
-                  {/* Account Name and Balance */}
-                  <div className="flex-1 min-w-0 flex items-center gap-2">
-                    <p className="text-white font-medium text-xs sm:text-sm truncate">{account.name}</p>
-                    <span className="px-1.5 sm:px-2 py-0.5 rounded bg-white/10 text-gray-400 text-[10px] sm:text-xs font-medium flex-shrink-0 capitalize">
-                      {account.type}
-                    </span>
-                  </div>
-                  <p className={`font-mono font-medium text-xs sm:text-sm flex-shrink-0 ${account.type === 'credit' ? 'text-red-400' : 'text-green-400'}`}>
-                    ${account.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </p>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
           <div className="mt-3 sm:mt-4 pt-2 sm:pt-3 border-t border-white/5">

@@ -119,6 +119,18 @@ export default function AccountCarousel({
             displayBalance = `$${account.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
           }
 
+          // 帳戶類型顯示名稱
+          const typeLabel: Record<string, string> = {
+            checking: 'Checking',
+            saving: 'Savings',
+            credit: 'Credit Card',
+            crypto: 'Crypto',
+          };
+          const accountTypeLabel = typeLabel[account.type] ?? account.type;
+          const accountDisplayName = account.mask
+            ? `${accountTypeLabel} ••••${account.mask}`
+            : accountTypeLabel;
+
           const stackLevel = activeCardId === account.id ? baseTopZIndex + 2 : orderedAccounts.length - index + 1;
           const defaultBg = index % 2 === 0 ? 'bg-[#0B0B0F]' : 'bg-[#1A1A24] border border-white/10';
 
@@ -153,7 +165,7 @@ export default function AccountCarousel({
                   {displayBalance}
                 </div>
                 <div className={`font-medium ${selectedId === account.id ? 'text-white/90' : 'text-gray-400'}`}>
-                  {account.name}
+                  {accountDisplayName}
                 </div>
               </div>
             </Reorder.Item>
