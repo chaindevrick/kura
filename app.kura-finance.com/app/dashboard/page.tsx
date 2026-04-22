@@ -195,39 +195,45 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-6 w-full">
         
         {/* Investment Card */}
-        <div className="rounded-2xl bg-[#1A1A24] border border-white/5 p-3 sm:p-4 lg:p-5 flex flex-col justify-between h-[25vh] min-h-[160px] max-h-[280px] w-full">
-          <div>
-            <p className="text-gray-400 text-[11px] sm:text-xs lg:text-sm font-medium mb-1.5 sm:mb-2">Investment</p>
-            <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-white mb-1.5 sm:mb-2">$0.00</h3>
-            <p className="text-gray-500 text-[11px] sm:text-xs">Portfolio growth pending setup</p>
+        <div className="relative aspect-square w-full">
+          <div className="absolute inset-0 rounded-2xl bg-[#1A1A24] border border-white/5 p-3 sm:p-4 lg:p-5 flex flex-col justify-between">
+            <div>
+              <p className="text-gray-400 text-[11px] sm:text-xs lg:text-sm font-medium mb-1.5 sm:mb-2">Investment</p>
+              <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-white mb-1.5 sm:mb-2">$0.00</h3>
+              <p className="text-gray-500 text-[11px] sm:text-xs">Portfolio growth pending setup</p>
+            </div>
+            <button className="w-full py-1.5 sm:py-2 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white text-[11px] sm:text-xs font-medium transition-colors">
+              View Details
+            </button>
           </div>
-          <button className="w-full py-1.5 sm:py-2 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white text-[11px] sm:text-xs font-medium transition-colors">
-            View Details
-          </button>
         </div>
 
         {/* Crypto Card */}
-        <div className="rounded-2xl bg-[#1A1A24] border border-white/5 p-3 sm:p-4 lg:p-5 flex flex-col justify-between h-[25vh] min-h-[160px] max-h-[280px] w-full">
-          <div>
-            <p className="text-gray-400 text-[11px] sm:text-xs lg:text-sm font-medium mb-1.5 sm:mb-2">Crypto</p>
-            <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-white mb-1.5 sm:mb-2">$0.00</h3>
-            <p className="text-gray-500 text-[11px] sm:text-xs">Connect your Web3 wallet</p>
+        <div className="relative aspect-square w-full">
+          <div className="absolute inset-0 rounded-2xl bg-[#1A1A24] border border-white/5 p-3 sm:p-4 lg:p-5 flex flex-col justify-between">
+            <div>
+              <p className="text-gray-400 text-[11px] sm:text-xs lg:text-sm font-medium mb-1.5 sm:mb-2">Crypto</p>
+              <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-white mb-1.5 sm:mb-2">$0.00</h3>
+              <p className="text-gray-500 text-[11px] sm:text-xs">Connect your Web3 wallet</p>
+            </div>
+            <button className="w-full py-1.5 sm:py-2 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white text-[11px] sm:text-xs font-medium transition-colors">
+              Connect Wallet
+            </button>
           </div>
-          <button className="w-full py-1.5 sm:py-2 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white text-[11px] sm:text-xs font-medium transition-colors">
-            Connect Wallet
-          </button>
         </div>
 
         {/* DeFi Protocol Card */}
-        <div className="rounded-2xl bg-[#1A1A24] border border-white/5 p-3 sm:p-4 lg:p-5 flex flex-col justify-between h-[25vh] min-h-[160px] max-h-[280px] w-full">
-          <div>
-            <p className="text-gray-400 text-[11px] sm:text-xs lg:text-sm font-medium mb-1.5 sm:mb-2">DeFi Protocol</p>
-            <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-white mb-1.5 sm:mb-2">$0.00</h3>
-            <p className="text-gray-500 text-[11px] sm:text-xs">Track your DeFi positions</p>
+        <div className="relative aspect-square w-full">
+          <div className="absolute inset-0 rounded-2xl bg-[#1A1A24] border border-white/5 p-3 sm:p-4 lg:p-5 flex flex-col justify-between">
+            <div>
+              <p className="text-gray-400 text-[11px] sm:text-xs lg:text-sm font-medium mb-1.5 sm:mb-2">DeFi Protocol</p>
+              <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-white mb-1.5 sm:mb-2">$0.00</h3>
+              <p className="text-gray-500 text-[11px] sm:text-xs">Track your DeFi positions</p>
+            </div>
+            <button className="w-full py-1.5 sm:py-2 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white text-[11px] sm:text-xs font-medium transition-colors">
+              Add Protocol
+            </button>
           </div>
-          <button className="w-full py-1.5 sm:py-2 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white text-[11px] sm:text-xs font-medium transition-colors">
-            Add Protocol
-          </button>
         </div>
 
       </div>
