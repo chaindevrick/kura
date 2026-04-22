@@ -1,6 +1,7 @@
 // src/store/useFinanceStore.ts
 import { create } from 'zustand';
 import { fetchPlaidFinanceSnapshot } from '@/lib/plaidApi';
+import { fetchAssetHistory, AssetHistoryPoint, AssetHistorySummary } from '@/lib/assetApi';
 
 export interface Account {
   id: string;
@@ -70,10 +71,15 @@ interface FinanceState {
   selectedTimeRange: '1M' | '3M' | '6M' | '1Y' | 'All';
   chartDataByTimeRange: Record<string, number[]>;
   
-  // Asset Performance Tracking
+  // Asset Performance Tracking (local snapshots, recorded while the tab is open)
   assetHistory: AssetSnapshot[];
   lastRecordedTime: number | null;
-  
+
+  // Asset History from API (server-side, used for the dashboard chart)
+  apiAssetHistory: AssetHistoryPoint[];
+  assetHistorySummary: AssetHistorySummary | null;
+  isLoadingAssetHistory: boolean;
+
   // Loading & Error States
   isLoadingPlaidData: boolean;
   plaidError: string | null;
@@ -97,11 +103,14 @@ interface FinanceState {
   syncConnectedWalletPosition: (payload: SyncWalletPayload) => Promise<void>;
   removeConnectedWalletPosition: (address: string, chainId: number) => void;
   
-  // Asset History Operations (for performance tracking)
+  // Asset History Operations (local snapshots)
   recordAssetSnapshot: () => void;
   getAssetSnapshotsByTimeRange: (days: number) => AssetSnapshot[];
   clearAssetHistory: () => void;
   calculateTotalAssets: () => number;
+
+  // Asset History from API
+  hydrateAssetHistory: (days?: number) => Promise<void>;
 }
 
 const CHAIN_MARKET_META: Record<number, { coingeckoId: string; logo: string; fallbackName: string }> = {
@@ -141,6 +150,9 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
   plaidError: null,
   assetHistory: [],
   lastRecordedTime: null,
+  apiAssetHistory: [],
+  assetHistorySummary: null,
+  isLoadingAssetHistory: false,
   
   // Simple Setters
   toggleAiOptIn: () => set((state) => ({ isAiOptedIn: !state.isAiOptedIn })),
@@ -457,5 +469,30 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
   clearAssetHistory: () => {
     console.info('[FinanceStore] Clearing asset history');
     set({ assetHistory: [], lastRecordedTime: null });
+  },
+
+  // Asset History from API
+  hydrateAssetHistory: async (days: number = 30) => {
+    try {
+      set({ isLoadingAssetHistory: true });
+      console.debug('[FinanceStore] Fetching asset history from API', { days });
+
+      const response = await fetchAssetHistory(days);
+
+      set({
+        apiAssetHistory: response.history,
+        assetHistorySummary: response.summary,
+        isLoadingAssetHistory: false,
+      });
+
+      console.info('[FinanceStore] Asset history hydrated', {
+        points: response.history.length,
+        change: response.summary.changePercent,
+      });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch asset history';
+      console.warn('[FinanceStore] Failed to hydrate asset history', { error: errorMessage });
+      set({ isLoadingAssetHistory: false });
+    }
   },
 }));

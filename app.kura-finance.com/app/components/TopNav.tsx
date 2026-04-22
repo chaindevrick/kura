@@ -27,7 +27,7 @@ export default function TopNav() {
         {/* 左側 Logo */}
         <Link href="/" className="text-lg font-bold text-white flex items-center gap-2 hover:opacity-80 transition-opacity">
           <Image
-            src="/logo.svg"
+            src="/logo.webp"
             alt="Kura Logo"
             width={32}
             height={32}

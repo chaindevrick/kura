@@ -1,7 +1,7 @@
 // src/app/dashboard/page.tsx
 "use client";
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { useFinanceStore } from '../store/useFinanceStore';
@@ -14,7 +14,10 @@ const ConnectAccountModal = dynamic(() => import('@/components/ConnectAccountMod
 export default function DashboardPage() {
   const accounts = useFinanceStore(state => state.accounts);
   const transactions = useFinanceStore(state => state.transactions);
-  const assetHistory = useFinanceStore(state => state.assetHistory);
+  const apiAssetHistory = useFinanceStore(state => state.apiAssetHistory);
+  const assetHistorySummary = useFinanceStore(state => state.assetHistorySummary);
+  const isLoadingAssetHistory = useFinanceStore(state => state.isLoadingAssetHistory);
+  const hydrateAssetHistory = useFinanceStore(state => state.hydrateAssetHistory);
 
   const [isConnectModalOpen, setIsConnectModalOpen] = useState<boolean>(false);
 
@@ -35,13 +38,21 @@ export default function DashboardPage() {
       .slice(0, 5);
   }, [transactions]);
 
-  // Format asset history for chart
+  // Fetch asset history from API on mount
+  useEffect(() => {
+    hydrateAssetHistory(30);
+  }, [hydrateAssetHistory]);
+
+  // Format API asset history for chart
   const chartData = useMemo(() => {
-    return assetHistory.map(snapshot => ({
-      time: new Date(snapshot.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-      value: snapshot.totalAssets,
+    return apiAssetHistory.map(point => ({
+      time: new Date(point.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      value: point.value,
     }));
-  }, [assetHistory]);
+  }, [apiAssetHistory]);
+
+  const changePercent = assetHistorySummary?.changePercent ?? null;
+  const changePositive = changePercent !== null && changePercent >= 0;
 
   return (
     <div className="w-full pb-8 px-4 sm:px-6 lg:px-8 pt-8 max-w-7xl mx-auto">
@@ -56,15 +67,30 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 mb-4 lg:mb-6 w-full">
         
         {/* Total Assets Card */}
-        <div className="rounded-2xl bg-[#1A1A24] border border-white/5 p-4 sm:p-5 lg:p-6 flex flex-col justify-between aspect-video min-h-[280px] sm:min-h-[320px] w-full">
+        <div className="rounded-2xl bg-[#1A1A24] border border-white/5 p-3 sm:p-4 lg:p-5 flex flex-col justify-between h-[30vh] min-h-[200px] max-h-[340px] w-full">
           <div>
-            <p className="text-gray-400 text-xs sm:text-sm lg:text-base font-medium mb-2 sm:mb-3">Total Assets</p>
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-white">${totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h2>
+            <p className="text-gray-400 text-[11px] sm:text-xs lg:text-sm font-medium mb-1.5 sm:mb-2">Total Assets</p>
+            <div className="flex items-baseline gap-3 flex-wrap">
+              <h2 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold text-white">${totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h2>
+              {changePercent !== null && (
+                <span className={`text-xs sm:text-sm font-semibold px-2 py-0.5 rounded-full ${
+                  changePositive
+                    ? 'bg-emerald-500/15 text-emerald-400'
+                    : 'bg-red-500/15 text-red-400'
+                }`}>
+                  {changePositive ? '+' : ''}{changePercent.toFixed(2)}% <span className="font-normal opacity-70">30d</span>
+                </span>
+              )}
+            </div>
           </div>
           
           {/* Chart */}
-          {chartData.length > 0 ? (
-            <div className="flex-1 -mx-4 sm:-mx-5 lg:-mx-6 -mb-4 sm:-mb-5 lg:-mb-6 flex items-end mt-2 sm:mt-3">
+          {isLoadingAssetHistory ? (
+            <div className="flex-1 flex items-end mt-1.5 sm:mt-2 min-h-[80px]">
+              <div className="w-full h-full rounded-xl bg-white/5 animate-pulse" />
+            </div>
+          ) : chartData.length > 0 ? (
+            <div className="flex-1 -mx-3 sm:-mx-4 lg:-mx-5 -mb-3 sm:-mb-4 lg:-mb-5 flex items-end mt-1.5 sm:mt-2">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
@@ -72,7 +98,8 @@ export default function DashboardPage() {
                   <YAxis stroke="rgba(255,255,255,0.3)" style={{ fontSize: 'clamp(10px, 2vw, 12px)' }} width={40} tick={{ fontSize: 'clamp(10px, 2vw, 12px)' }} />
                   <Tooltip 
                     contentStyle={{ backgroundColor: '#0B0B0F', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
-                    formatter={(value) => `$${(value as number).toFixed(2)}`}
+                    formatter={(value) => [`$${(value as number).toLocaleString('en-US', { minimumFractionDigits: 2 })}`, '總資產']}
+                    labelStyle={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px' }}
                   />
                   <Line 
                     type="monotone" 
@@ -80,6 +107,7 @@ export default function DashboardPage() {
                     stroke="#8B5CF6" 
                     strokeWidth={2}
                     dot={false}
+                    activeDot={{ r: 4, fill: '#8B5CF6', strokeWidth: 0 }}
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -101,9 +129,9 @@ export default function DashboardPage() {
         </div>
 
         {/* Accounts Card */}
-        <div className="rounded-2xl bg-[#1A1A24] border border-white/5 p-4 sm:p-5 lg:p-6 flex flex-col justify-between aspect-video min-h-[280px] sm:min-h-[320px] overflow-y-auto w-full">
+        <div className="rounded-2xl bg-[#1A1A24] border border-white/5 p-3 sm:p-4 lg:p-5 flex flex-col justify-between h-[30vh] min-h-[200px] max-h-[340px] overflow-y-auto w-full">
           <div>
-            <p className="text-gray-400 text-xs sm:text-sm lg:text-base font-medium mb-2 sm:mb-3">Accounts</p>
+            <p className="text-gray-400 text-[11px] sm:text-xs lg:text-sm font-medium mb-1.5 sm:mb-2">Accounts</p>
             <div className="space-y-1 sm:space-y-2">
               {accounts.map((account) => {
                 const typeLabel: Record<string, string> = {
@@ -151,10 +179,10 @@ export default function DashboardPage() {
               })}
             </div>
           </div>
-          <div className="mt-3 sm:mt-4 pt-2 sm:pt-3 border-t border-white/5">
+          <div className="mt-2 sm:mt-3 pt-2 border-t border-white/5">
             <button
               onClick={openConnectFlow}
-              className="w-full py-2 sm:py-2.5 rounded-lg bg-[#8B5CF6] hover:bg-[#8B5CF6]/90 text-white text-xs sm:text-sm font-medium transition-colors"
+              className="w-full py-1.5 sm:py-2 rounded-lg bg-[#8B5CF6] hover:bg-[#8B5CF6]/90 text-white text-[11px] sm:text-xs font-medium transition-colors"
             >
               Connect Account
             </button>
@@ -167,37 +195,37 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-6 w-full">
         
         {/* Investment Card */}
-        <div className="rounded-2xl bg-[#1A1A24] border border-white/5 p-4 sm:p-5 lg:p-6 flex flex-col justify-between aspect-square min-h-[240px] sm:min-h-[280px] w-full">
+        <div className="rounded-2xl bg-[#1A1A24] border border-white/5 p-3 sm:p-4 lg:p-5 flex flex-col justify-between h-[25vh] min-h-[160px] max-h-[280px] w-full">
           <div>
-            <p className="text-gray-400 text-xs sm:text-sm lg:text-base font-medium mb-2 sm:mb-3">Investment</p>
-            <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-2 sm:mb-3">$0.00</h3>
-            <p className="text-gray-500 text-xs sm:text-sm">Portfolio growth pending setup</p>
+            <p className="text-gray-400 text-[11px] sm:text-xs lg:text-sm font-medium mb-1.5 sm:mb-2">Investment</p>
+            <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-white mb-1.5 sm:mb-2">$0.00</h3>
+            <p className="text-gray-500 text-[11px] sm:text-xs">Portfolio growth pending setup</p>
           </div>
-          <button className="w-full py-2 sm:py-2.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white text-xs sm:text-sm font-medium transition-colors">
+          <button className="w-full py-1.5 sm:py-2 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white text-[11px] sm:text-xs font-medium transition-colors">
             View Details
           </button>
         </div>
 
         {/* Crypto Card */}
-        <div className="rounded-2xl bg-[#1A1A24] border border-white/5 p-4 sm:p-5 lg:p-6 flex flex-col justify-between aspect-square min-h-[240px] sm:min-h-[280px] w-full">
+        <div className="rounded-2xl bg-[#1A1A24] border border-white/5 p-3 sm:p-4 lg:p-5 flex flex-col justify-between h-[25vh] min-h-[160px] max-h-[280px] w-full">
           <div>
-            <p className="text-gray-400 text-xs sm:text-sm lg:text-base font-medium mb-2 sm:mb-3">Crypto</p>
-            <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-2 sm:mb-3">$0.00</h3>
-            <p className="text-gray-500 text-xs sm:text-sm">Connect your Web3 wallet</p>
+            <p className="text-gray-400 text-[11px] sm:text-xs lg:text-sm font-medium mb-1.5 sm:mb-2">Crypto</p>
+            <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-white mb-1.5 sm:mb-2">$0.00</h3>
+            <p className="text-gray-500 text-[11px] sm:text-xs">Connect your Web3 wallet</p>
           </div>
-          <button className="w-full py-2 sm:py-2.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white text-xs sm:text-sm font-medium transition-colors">
+          <button className="w-full py-1.5 sm:py-2 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white text-[11px] sm:text-xs font-medium transition-colors">
             Connect Wallet
           </button>
         </div>
 
         {/* DeFi Protocol Card */}
-        <div className="rounded-2xl bg-[#1A1A24] border border-white/5 p-4 sm:p-5 lg:p-6 flex flex-col justify-between aspect-square min-h-[240px] sm:min-h-[280px] w-full">
+        <div className="rounded-2xl bg-[#1A1A24] border border-white/5 p-3 sm:p-4 lg:p-5 flex flex-col justify-between h-[25vh] min-h-[160px] max-h-[280px] w-full">
           <div>
-            <p className="text-gray-400 text-xs sm:text-sm lg:text-base font-medium mb-2 sm:mb-3">DeFi Protocol</p>
-            <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-2 sm:mb-3">$0.00</h3>
-            <p className="text-gray-500 text-xs sm:text-sm">Track your DeFi positions</p>
+            <p className="text-gray-400 text-[11px] sm:text-xs lg:text-sm font-medium mb-1.5 sm:mb-2">DeFi Protocol</p>
+            <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-white mb-1.5 sm:mb-2">$0.00</h3>
+            <p className="text-gray-500 text-[11px] sm:text-xs">Track your DeFi positions</p>
           </div>
-          <button className="w-full py-2 sm:py-2.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white text-xs sm:text-sm font-medium transition-colors">
+          <button className="w-full py-1.5 sm:py-2 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white text-[11px] sm:text-xs font-medium transition-colors">
             Add Protocol
           </button>
         </div>
