@@ -98,7 +98,7 @@ async function assetRequest<T>(
  */
 export const fetchAssetHistory = (days: number = 30): Promise<AssetHistoryResponse> => {
   return assetRequest<AssetHistoryResponse>(
-    `/api/asset/history?days=${days}`,
+    `/api/assets/history?days=${days}`,
     { method: 'GET' }
   );
 };
