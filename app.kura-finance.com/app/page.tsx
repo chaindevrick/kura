@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppStore } from '@/store/useAppStore';
-import { AuthApiError, loginUser, registerUser } from '@/lib/authApi';
+import { AuthApiError } from '@/lib/authApi';
+import { zkLogin, zkRegister, zkLoginLegacy } from '@/lib/crypto/zkAuth';
 
 export default function RootHubPage() {
   const authStatus = useAppStore((state) => state.authStatus);
@@ -36,9 +37,24 @@ export default function RootHubPage() {
     setAuthError(null);
 
     try {
-      authMode === 'register'
-        ? await registerUser(email.trim(), password)
-        : await loginUser(email.trim(), password);
+      if (authMode === 'register') {
+        // 建立帳號並在背景設定 SRP
+        await zkRegister(email.trim(), password);
+      } else {
+        // 嘗試 SRP 零知識登入；若帳號尚未升級則 fallback 至舊版（並自動背景升級）
+        try {
+          await zkLogin(email.trim(), password);
+        } catch (srpError) {
+          // SRP not set up yet for this account → use legacy path
+          const msg = srpError instanceof Error ? srpError.message : '';
+          const isNotSetup = msg.includes('帳號或密碼錯誤') || msg.includes('SRP') || msg.includes('salt');
+          if (isNotSetup) {
+            await zkLoginLegacy(email.trim(), password);
+          } else {
+            throw srpError;
+          }
+        }
+      }
 
       setPlaidLinkToken(null);
       await hydrateUserProfile();
