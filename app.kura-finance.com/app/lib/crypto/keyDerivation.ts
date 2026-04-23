@@ -23,9 +23,9 @@ const PBKDF2_HASH = 'SHA-256';
 // 低階 Web Crypto 工具
 // ─────────────────────────────────────────
 
-function hexToBytes(hex: string): Uint8Array {
-  const ab = new ArrayBuffer(hex.length / 2);
-  const bytes = new Uint8Array(ab);
+function hexToBytes(hex: string): Uint8Array<ArrayBuffer> {
+  const buffer = new ArrayBuffer(hex.length / 2);
+  const bytes = new Uint8Array(buffer);
   for (let i = 0; i < bytes.length; i++) {
     bytes[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16);
   }

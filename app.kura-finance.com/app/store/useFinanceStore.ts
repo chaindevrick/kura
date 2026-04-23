@@ -53,13 +53,6 @@ interface SyncWalletPayload {
   nativeBalance: number;
 }
 
-export interface AssetSnapshot {
-  timestamp: number; // Unix timestamp in milliseconds
-  totalAssets: number; // 总资产（USD）
-  bankingBalance: number; // 银行账户总余额
-  investmentValue: number; // 投资总价值
-  cryptoValue: number; // 加密货币总价值
-}
 
 interface FinanceState {
   // Data
@@ -71,10 +64,6 @@ interface FinanceState {
   selectedTimeRange: '1M' | '3M' | '6M' | '1Y' | 'All';
   chartDataByTimeRange: Record<string, number[]>;
   
-  // Asset Performance Tracking (local snapshots, recorded while the tab is open)
-  assetHistory: AssetSnapshot[];
-  lastRecordedTime: number | null;
-
   // Asset History from API (server-side, used for the dashboard chart)
   apiAssetHistory: AssetHistoryPoint[];
   assetHistorySummary: AssetHistorySummary | null;
@@ -103,12 +92,6 @@ interface FinanceState {
   syncConnectedWalletPosition: (payload: SyncWalletPayload) => Promise<void>;
   removeConnectedWalletPosition: (address: string, chainId: number) => void;
   
-  // Asset History Operations (local snapshots)
-  recordAssetSnapshot: () => void;
-  getAssetSnapshotsByTimeRange: (days: number) => AssetSnapshot[];
-  clearAssetHistory: () => void;
-  calculateTotalAssets: () => number;
-
   // Asset History from API
   hydrateAssetHistory: (days?: number) => Promise<void>;
 }
@@ -148,8 +131,6 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
   },
   isLoadingPlaidData: false,
   plaidError: null,
-  assetHistory: [],
-  lastRecordedTime: null,
   apiAssetHistory: [],
   assetHistorySummary: null,
   isLoadingAssetHistory: false,
@@ -374,103 +355,6 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
     console.info('[FinanceStore] Wallet position removed');
   },
   
-  // Asset History & Performance Tracking
-  calculateTotalAssets: () => {
-    const state = get();
-    
-    // 银行账户总余额
-    const bankingBalance = state.accounts.reduce((sum, account) => sum + account.balance, 0);
-    
-    // 投资总价值
-    const investmentValue = state.investments.reduce((sum, investment) => {
-      return sum + investment.holdings * investment.currentPrice;
-    }, 0);
-    
-    const totalAssets = bankingBalance + investmentValue;
-    
-    console.debug('[FinanceStore] Total assets calculated', {
-      bankingBalance,
-      investmentValue,
-      totalAssets,
-    });
-    
-    return totalAssets;
-  },
-  
-  recordAssetSnapshot: () => {
-    const state = get();
-    const now = Date.now();
-    
-    // 检查是否距离上次记录已有足够的时间（至少 1 小时以避免过度记录）
-    if (state.lastRecordedTime && (now - state.lastRecordedTime) < 3600000) {
-      console.debug('[FinanceStore] Skipping snapshot - recorded too recently', {
-        lastRecordedTime: state.lastRecordedTime,
-        now,
-      });
-      return;
-    }
-    
-    const totalAssets = get().calculateTotalAssets();
-    const bankingBalance = state.accounts.reduce((sum, account) => sum + account.balance, 0);
-    const investmentValue = state.investments.reduce((sum, investment) => {
-      return sum + investment.holdings * investment.currentPrice;
-    }, 0);
-    const cryptoValue = state.investmentAccounts
-      .filter((account) => account.type === 'Web3 Wallet')
-      .reduce((sum, account) => {
-        const investments = state.investments.filter((inv) => inv.accountId === account.id);
-        return sum + investments.reduce((invSum, inv) => invSum + inv.holdings * inv.currentPrice, 0);
-      }, 0);
-    
-    const snapshot: AssetSnapshot = {
-      timestamp: now,
-      totalAssets,
-      bankingBalance,
-      investmentValue,
-      cryptoValue,
-    };
-    
-    set((currentState) => {
-      // 保持最多 365 天的数据
-      const oneYearAgo = now - 365 * 24 * 3600 * 1000;
-      const filteredHistory = currentState.assetHistory.filter(
-        (snap) => snap.timestamp > oneYearAgo
-      );
-      
-      return {
-        assetHistory: [...filteredHistory, snapshot],
-        lastRecordedTime: now,
-      };
-    });
-    
-    console.info('[FinanceStore] Asset snapshot recorded', {
-      timestamp: new Date(now).toISOString(),
-      totalAssets,
-      bankingBalance,
-      investmentValue,
-      cryptoValue,
-    });
-  },
-  
-  getAssetSnapshotsByTimeRange: (days: number) => {
-    const state = get();
-    const cutoffTime = Date.now() - days * 24 * 3600 * 1000;
-    
-    const snapshots = state.assetHistory.filter((snap) => snap.timestamp >= cutoffTime);
-    
-    console.debug('[FinanceStore] Retrieved asset snapshots', {
-      requestedDays: days,
-      snapshotCount: snapshots.length,
-    });
-    
-    return snapshots;
-  },
-  
-  clearAssetHistory: () => {
-    console.info('[FinanceStore] Clearing asset history');
-    set({ assetHistory: [], lastRecordedTime: null });
-  },
-
   // Asset History from API
   hydrateAssetHistory: async (days: number = 30) => {
     try {

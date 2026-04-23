@@ -138,7 +138,6 @@ export const useAppStore = create<AppState>((set, get) => ({
       try {
         const hydratePlaidFinanceData = useFinanceStore.getState().hydratePlaidFinanceData;
         await hydratePlaidFinanceData();
-        useFinanceStore.getState().recordAssetSnapshot();
       } catch (plaidError) {
         console.warn('[AppStore] Failed to auto-load Plaid data after login', plaidError);
       }
@@ -176,7 +175,6 @@ export const useAppStore = create<AppState>((set, get) => ({
       try {
         const hydratePlaidFinanceData = useFinanceStore.getState().hydratePlaidFinanceData;
         await hydratePlaidFinanceData();
-        useFinanceStore.getState().recordAssetSnapshot();
       } catch (plaidError) {
         console.warn('[AppStore] Failed to auto-load Plaid data after signup', plaidError);
       }
@@ -289,12 +287,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         const hydratePlaidFinanceData = useFinanceStore.getState().hydratePlaidFinanceData;
         await hydratePlaidFinanceData();
         console.info('[AppStore] Plaid finance data auto-loaded after registration confirmation');
-
-        // Record asset snapshot for performance tracking
-        const recordAssetSnapshot = useFinanceStore.getState().recordAssetSnapshot;
-        recordAssetSnapshot();
       } catch (plaidError) {
-        // Plaid data loading is optional - don't fail the registration if it fails
         console.warn('[AppStore] Failed to auto-load Plaid data after registration confirmation', plaidError);
       }
     } catch (error) {
@@ -345,12 +338,7 @@ export const useAppStore = create<AppState>((set, get) => ({
           const hydratePlaidFinanceData = useFinanceStore.getState().hydratePlaidFinanceData;
           await hydratePlaidFinanceData();
           console.info('[AppStore] Plaid finance data auto-loaded successfully');
-
-          // Record asset snapshot for performance tracking
-          const recordAssetSnapshot = useFinanceStore.getState().recordAssetSnapshot;
-          recordAssetSnapshot();
         } catch (plaidError) {
-          // Plaid data loading is optional - don't fail the login if it fails
           console.warn('[AppStore] Failed to auto-load Plaid data', plaidError);
         }
       } catch (error) {
@@ -488,13 +476,9 @@ export const useAppStore = create<AppState>((set, get) => ({
       const hydratePlaidFinanceData = useFinanceStore.getState().hydratePlaidFinanceData;
       await hydratePlaidFinanceData();
 
-      // Record asset snapshot for performance tracking
-      const recordAssetSnapshot = useFinanceStore.getState().recordAssetSnapshot;
-      recordAssetSnapshot();
-
       // Clear the link token
       set({ plaidLinkToken: null });
-      console.info('[AppStore] Finance data reloaded and asset snapshot recorded after Plaid exchange');
+      console.info('[AppStore] Finance data reloaded after Plaid exchange');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to exchange Plaid token';
       console.error('[AppStore] Plaid exchange failed', { error: errorMessage });
