@@ -96,8 +96,8 @@ export default function DashboardPage() {
         <ConnectAccountModal isOpen={isConnectModalOpen} onClose={() => setIsConnectModalOpen(false)} />
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6 w-full">
-        <Card className="h-[40vh] min-h-[267px] max-h-[453px]">
+      <div className="grid grid-cols-1 xl:grid-cols-[1.2fr_1fr] gap-4 mb-6 w-full">
+        <Card className="h-[26rem]">
           <CardHeader className="pb-3">
             <CardDescription className="text-sm">Total Assets</CardDescription>
             <div className="flex items-baseline gap-3 flex-wrap">
@@ -154,7 +154,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="h-[40vh] min-h-[267px] max-h-[453px] flex flex-col">
+        <Card className="h-[26rem] flex flex-col">
           <CardHeader className="pb-3">
             <CardDescription className="text-sm">Accounts</CardDescription>
           </CardHeader>
@@ -209,7 +209,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6 w-full">
-        <Card className="aspect-square">
+        <Card className="min-h-[13.5rem]">
           <CardHeader>
             <CardDescription>Investment</CardDescription>
             <CardTitle className="text-2xl">$0.00</CardTitle>
@@ -222,7 +222,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="aspect-square">
+        <Card className="min-h-[13.5rem]">
           <CardHeader>
             <CardDescription>Crypto</CardDescription>
             <CardTitle className="text-2xl">$0.00</CardTitle>
@@ -235,7 +235,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="aspect-square">
+        <Card className="min-h-[13.5rem]">
           <CardHeader>
             <CardDescription>DeFi Protocol</CardDescription>
             <CardTitle className="text-2xl">$0.00</CardTitle>
