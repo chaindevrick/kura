@@ -45,11 +45,47 @@ export default function DashboardPage() {
   }, [hydrateAssetHistory]);
 
   const chartData = useMemo(() => {
-    return apiAssetHistory.map((point) => ({
-      time: new Date(point.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+    const sortedHistory = [...apiAssetHistory].sort(
+      (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+    );
+
+    if (sortedHistory.length === 0) return [];
+
+    const firstTimestamp = new Date(sortedHistory[0].timestamp);
+    const lastTimestamp = new Date(sortedHistory[sortedHistory.length - 1].timestamp);
+    const isSameDay = firstTimestamp.toDateString() === lastTimestamp.toDateString();
+
+    const formatLabel = (timestamp: string): string =>
+      new Date(timestamp).toLocaleString(
+        'en-US',
+        isSameDay
+          ? { hour: '2-digit', minute: '2-digit', hour12: false }
+          : { month: 'short', day: 'numeric' },
+      );
+
+    const points = sortedHistory.map((point) => ({
+      timestamp: point.timestamp,
+      label: formatLabel(point.timestamp),
       value: point.value,
     }));
-  }, [apiAssetHistory]);
+
+    const latestHistory = sortedHistory[sortedHistory.length - 1];
+    const latestTimestampMs = new Date(latestHistory.timestamp).getTime();
+    const hasSignificantDiff = Math.abs(latestHistory.value - totalBalance) > 0.01;
+
+    // 若最新歷史點與當前總資產差距大，補一個「當前值」點避免圖表誤導。
+    if (hasSignificantDiff) {
+      const nextTimestampMs = latestTimestampMs + 60 * 1000;
+      const nowIso = new Date(nextTimestampMs).toISOString();
+      points.push({
+        timestamp: nowIso,
+        label: formatLabel(nowIso),
+        value: totalBalance,
+      });
+    }
+
+    return points;
+  }, [apiAssetHistory, totalBalance]);
 
   const changePercent = assetHistorySummary?.changePercent ?? null;
   const changePositive = changePercent !== null && changePercent >= 0;
@@ -83,10 +119,21 @@ export default function DashboardPage() {
               <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                 <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                  <XAxis dataKey="time" stroke="rgba(255,255,255,0.3)" tick={{ fontSize: 12 }} />
+                  <XAxis dataKey="label" stroke="rgba(255,255,255,0.3)" tick={{ fontSize: 12 }} />
                   <YAxis stroke="rgba(255,255,255,0.3)" width={40} tick={{ fontSize: 12 }} />
                   <Tooltip
                     contentStyle={{ backgroundColor: '#0B0B0F', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
+                    labelFormatter={(_, payload) => {
+                      const rawTimestamp = payload?.[0]?.payload?.timestamp as string | undefined;
+                      if (!rawTimestamp) return '';
+                      return new Date(rawTimestamp).toLocaleString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: false,
+                      });
+                    }}
                     formatter={(value) => [`$${(value as number).toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 'Total Assets']}
                     labelStyle={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px' }}
                   />

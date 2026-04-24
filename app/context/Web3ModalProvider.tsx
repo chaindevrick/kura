@@ -3,7 +3,7 @@
 
 import React, { ReactNode, useMemo } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { createConfig, http, WagmiProvider, type State } from 'wagmi'
+import { createConfig, http, WagmiProvider, type State, type Config } from 'wagmi'
 import { injected, walletConnect } from 'wagmi/connectors'
 import { mainnet, arbitrum, polygon } from 'wagmi/chains' // 引入你想要支援的區塊鏈
 import AppSessionHydrator from '@/components/AppSessionHydrator'
@@ -13,22 +13,21 @@ const queryClient = new QueryClient()
 
 // Reown（原 WalletConnect）專案 ID
 const reownProjectId = process.env.NEXT_PUBLIC_REOWN_PROJECT_ID
+const fallbackAppUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
 // 在執行期從瀏覽器取得實際 URL（僅客戶端）
 const getWalletMetadataUrl = () => {
   if (typeof window !== 'undefined') {
     return `${window.location.protocol}//${window.location.host}`;
   }
-  // 若 window 不可用，必須使用環境變數
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
-  if (!appUrl) {
-    throw new Error('NEXT_PUBLIC_APP_URL environment variable is not set.');
-  }
-  return appUrl;
+  return fallbackAppUrl;
 }
 
 const createWagmiConfig = () => {
-  const connectors = reownProjectId
+  const isBrowser = typeof window !== 'undefined';
+
+  // SSR/build 階段不要初始化 walletConnect connector，避免 Core 重複初始化與 localStorage 錯誤。
+  const connectors = isBrowser && reownProjectId
     ? [
         walletConnect({
           projectId: reownProjectId,
@@ -42,7 +41,9 @@ const createWagmiConfig = () => {
         }),
         injected(),
       ]
-    : [injected()]
+    : isBrowser
+      ? [injected()]
+      : []
 
   return createConfig({
     chains: [mainnet, arbitrum, polygon],
@@ -56,6 +57,14 @@ const createWagmiConfig = () => {
   })
 }
 
+let wagmiConfigSingleton: Config | null = null;
+
+function getWagmiConfig(): Config {
+  if (wagmiConfigSingleton) return wagmiConfigSingleton;
+  wagmiConfigSingleton = createWagmiConfig();
+  return wagmiConfigSingleton;
+}
+
 // 6. 建立 Provider 元件
 export default function Web3ModalProvider({
   children,
@@ -64,7 +73,7 @@ export default function Web3ModalProvider({
   children: ReactNode
   initialState?: State
 }) {
-  const config = useMemo(() => createWagmiConfig(), [])
+  const config = useMemo(() => getWagmiConfig(), [])
   return (
     <WagmiProvider config={config} initialState={initialState}>
       <QueryClientProvider client={queryClient}>
