@@ -1,36 +1,110 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Kura Finance Web
 
-## Getting Started
+Kura Finance is a privacy-focused finance dashboard built with Next.js App Router.
+This repository contains the web frontend (`app.kura-finance.com`) for account linking, portfolio views, and zero-knowledge authentication flows.
 
-First, run the development server:
+## Features
+
+- Zero-knowledge auth flow with SRP-based login and password operations
+- Plaid integration for bank and brokerage account snapshots
+- Reown (WalletConnect) integration for Web3 wallet connections
+- Client-side encrypted local finance cache (AES-GCM with in-memory data key session)
+- Unified API client with standard response envelope handling
+- Shadcn-style UI component system on top of Tailwind CSS
+
+## Tech Stack
+
+- Next.js 16 (App Router), React 19, TypeScript
+- Zustand (state), React Query (server state), wagmi + viem (Web3)
+- Framer Motion, Recharts, Tailwind CSS
+
+## Prerequisites
+
+- Node.js 20+
+- npm 10+
+- Running backend API service (separate repository)
+
+## Environment Variables
+
+Create a `.env.local` file in this project root:
+
+```bash
+NEXT_PUBLIC_BACKEND_URL=http://localhost:8080
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+NEXT_PUBLIC_REOWN_PROJECT_ID=your_reown_project_id
+```
+
+Notes:
+
+- `NEXT_PUBLIC_REOWN_PROJECT_ID` is required for WalletConnect/Reown QR connection flow.
+- `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` is still accepted as a fallback alias in code.
+
+## Local Development
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Start dev server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `npm run dev` - run local dev server
+- `npm run lint` - run ESLint
+- `npm run build` - production build check
+- `npm run start` - run production server locally
+- `npm run build:standalone` - standalone build target
+- `npm run cert:gen` - generate local certificate
 
-## Learn More
+## API Response Contract (Frontend Expectation)
 
-To learn more about Next.js, take a look at the following resources:
+The frontend expects backend APIs to follow:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- Success envelope:
+  - `{ "success": true, "data": { ... }, "meta": { ... } }`
+- Error envelope:
+  - `{ "success": false, "error": { "code": "...", "message": "...", "details": ... } }`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+The client also tolerates legacy/fallback error payloads such as:
 
-## Deploy on Vercel
+- `{ "error": "Internal server error" }`
+- `{ "error": "伺服器錯誤" }`
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Health endpoints that intentionally return raw JSON (non-envelope) are also supported.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Security Notes
+
+- Never commit secrets, keys, or real `.env` files.
+- Authentication tokens are cookie-based for web usage.
+- Decrypted finance keys are kept in memory during session and cleared on logout.
+- Use HTTPS in all non-local environments.
+
+## Deployment
+
+This repository includes CI/CD workflow and deployment scripts.
+Common commands:
+
+```bash
+npm run build
+npm run deploy
+```
+
+## Contributing
+
+1. Create a feature branch
+2. Keep changes focused and reviewable
+3. Run `npm run lint` and `npm run build` before opening PR
+4. Include clear test notes in PR description
+
+## License
+
+This project is licensed under the GNU General Public License v3.0 (GPL-3.0).
+See the `LICENSE` file for the full text.
