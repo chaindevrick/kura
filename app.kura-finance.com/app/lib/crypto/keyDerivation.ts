@@ -15,7 +15,6 @@ import { argon2id } from 'hash-wasm';
  *   DataKey → 用於加密財務資料（目前在後端加密，Phase 3 移入 TEE）
  */
 
-const PBKDF2_ITERATIONS = 600_000;
 const PBKDF2_HASH = 'SHA-256';
 const ARGON2_ITERATIONS = 3;
 const ARGON2_MEMORY_KIB = 64 * 1024;
@@ -55,68 +54,27 @@ function base64ToBytes(b64: string): Uint8Array {
 
 /**
  * 步驟 1：password + salt → MasterKey（CryptoKey，不可匯出）
- * 主路徑使用 Argon2id；若瀏覽器/環境不支援再 fallback 到 PBKDF2。
+ * 只使用 Argon2id。
  */
 async function deriveMasterKey(password: string, saltHex: string): Promise<CryptoKey> {
   const saltBytes = hexToBytes(saltHex);
-
-  try {
-    const masterKeyHex = await argon2id({
-      password,
-      salt: saltBytes,
-      parallelism: ARGON2_PARALLELISM,
-      iterations: ARGON2_ITERATIONS,
-      memorySize: ARGON2_MEMORY_KIB,
-      hashLength: ARGON2_HASH_BYTES,
-      outputType: 'hex',
-    });
-
-    return crypto.subtle.importKey(
-      'raw',
-      hexToBytes(masterKeyHex),
-      { name: 'HKDF' },
-      false,
-      ['deriveKey', 'deriveBits'],
-    );
-  } catch {
-    // Fallback：保持舊版 PBKDF2 相容性，避免舊環境直接失效。
-  }
-
-  const enc = new TextEncoder();
-  const keyMaterial = await crypto.subtle.importKey(
-    'raw',
-    enc.encode(password),
-    'PBKDF2',
-    false,
-    ['deriveBits', 'deriveKey'],
-  );
-
-  const pbkdf2Params: Pbkdf2Params = {
-    name: 'PBKDF2',
+  const masterKeyHex = await argon2id({
+    password,
     salt: saltBytes,
-    iterations: PBKDF2_ITERATIONS,
-    hash: PBKDF2_HASH,
-  };
+    parallelism: ARGON2_PARALLELISM,
+    iterations: ARGON2_ITERATIONS,
+    memorySize: ARGON2_MEMORY_KIB,
+    hashLength: ARGON2_HASH_BYTES,
+    outputType: 'hex',
+  });
 
-  try {
-    return await crypto.subtle.deriveKey(
-      pbkdf2Params,
-      keyMaterial,
-      { name: 'HKDF', hash: PBKDF2_HASH },
-      false,
-      ['deriveKey', 'deriveBits'],
-    );
-  } catch {
-    // 某些 WebCrypto 實作不支援直接派生 HKDF key，改用 deriveBits 後再 import。
-    const masterBits = await crypto.subtle.deriveBits(pbkdf2Params, keyMaterial, 256);
-    return crypto.subtle.importKey(
-      'raw',
-      masterBits,
-      { name: 'HKDF' },
-      false,
-      ['deriveKey', 'deriveBits'],
-    );
-  }
+  return crypto.subtle.importKey(
+    'raw',
+    hexToBytes(masterKeyHex),
+    { name: 'HKDF' },
+    false,
+    ['deriveKey', 'deriveBits'],
+  );
 }
 
 /**
