@@ -4,18 +4,18 @@ import { argon2id } from 'hash-wasm';
  * 前端金鑰推導
  *
  * 使用 Argon2id + Web Crypto API 實現：
- * - Argon2id 推導 Master Key
- * - HKDF 衍生 KEK（Key Encryption Key）和 Auth Key
+ * - Argon2id 推導 AMK（Account Master Key）
+ * - 由 AMK 派生 DEK Wrap Key 與 Auth Key
  * - AES-GCM 加密/解密 Data Key
  *
  * 金鑰層次：
- *   password + salt → MasterKey (Argon2id)
- *   MasterKey → KEK (HKDF, 用於加/解密 DataKey)
- *   MasterKey → AuthKey (HKDF, 未來 SRP 使用)
+ *   password + srpSalt → AMK (Argon2id)
+ *   AMK + kekSalt → DEK Wrap Key (HKDF, 用於加/解密 DEK)
+ *   AMK + kekSalt → AuthKey (HKDF, 用於 SRP)
  *   DataKey → 用於加密財務資料（目前在後端加密，Phase 3 移入 TEE）
  */
 
-const PBKDF2_HASH = 'SHA-256';
+const HKDF_HASH = 'SHA-256';
 const ARGON2_ITERATIONS = 3;
 const ARGON2_MEMORY_KIB = 64 * 1024;
 const ARGON2_PARALLELISM = 1;
@@ -40,12 +40,8 @@ function bytesToHex(bytes: Uint8Array): string {
     .join('');
 }
 
-function bytesToBase64(bytes: Uint8Array): string {
-  return btoa(String.fromCharCode(...bytes));
-}
-
-function base64ToBytes(b64: string): Uint8Array {
-  return Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+function isHexString(value: string): boolean {
+  return /^[a-fA-F0-9]+$/.test(value) && value.length % 2 === 0;
 }
 
 // ─────────────────────────────────────────
@@ -53,12 +49,11 @@ function base64ToBytes(b64: string): Uint8Array {
 // ─────────────────────────────────────────
 
 /**
- * 步驟 1：password + salt → MasterKey（CryptoKey，不可匯出）
- * 只使用 Argon2id。
+ * 步驟 1：password + srpSalt → AMK（CryptoKey，不可匯出）
  */
-async function deriveMasterKey(password: string, saltHex: string): Promise<CryptoKey> {
-  const saltBytes = hexToBytes(saltHex);
-  const masterKeyHex = await argon2id({
+async function deriveAccountMasterKey(password: string, srpSaltHex: string): Promise<CryptoKey> {
+  const saltBytes = hexToBytes(srpSaltHex);
+  const amkHex = await argon2id({
     password,
     salt: saltBytes,
     parallelism: ARGON2_PARALLELISM,
@@ -70,7 +65,7 @@ async function deriveMasterKey(password: string, saltHex: string): Promise<Crypt
 
   return crypto.subtle.importKey(
     'raw',
-    hexToBytes(masterKeyHex),
+    hexToBytes(amkHex),
     { name: 'HKDF' },
     false,
     ['deriveKey', 'deriveBits'],
@@ -78,23 +73,18 @@ async function deriveMasterKey(password: string, saltHex: string): Promise<Crypt
 }
 
 /**
- * 步驟 2：MasterKey → 子金鑰（HKDF）
- * @param purpose 'kek' 或 'auth'
+ * 步驟 2：AMK → DEK Wrap Key（HKDF）
  */
-async function deriveSubKey(
-  masterKey: CryptoKey,
-  purpose: 'kek' | 'auth',
-  kekSalt: string,
-): Promise<CryptoKey> {
+async function deriveDekWrapKey(amk: CryptoKey, kekSalt: string): Promise<CryptoKey> {
   const enc = new TextEncoder();
   return crypto.subtle.deriveKey(
     {
       name: 'HKDF',
-      hash: PBKDF2_HASH,
+      hash: HKDF_HASH,
       salt: hexToBytes(kekSalt),
-      info: enc.encode(`kura-finance-${purpose}-v1`),
+      info: enc.encode('kura-finance-dek-wrap-v1'),
     },
-    masterKey,
+    amk,
     { name: 'AES-GCM', length: 256 },
     false,
     ['wrapKey', 'unwrapKey', 'encrypt', 'decrypt'],
@@ -107,14 +97,14 @@ async function deriveSubKey(
 
 /**
  * 使用 KEK 加密 Data Key（hex 字串）
- * 回傳格式：base64(iv + ciphertext)
+ * 回傳格式：hex(iv + ciphertext)
  */
-async function encryptDataKey(plainDataKeyHex: string, kek: CryptoKey): Promise<string> {
+async function encryptDataKey(plainDataKeyHex: string, dekWrapKey: CryptoKey): Promise<string> {
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const enc = new TextEncoder();
   const ciphertext = await crypto.subtle.encrypt(
     { name: 'AES-GCM', iv },
-    kek,
+    dekWrapKey,
     enc.encode(plainDataKeyHex),
   );
 
@@ -122,20 +112,24 @@ async function encryptDataKey(plainDataKeyHex: string, kek: CryptoKey): Promise<
   const combined = new Uint8Array(iv.length + ciphertext.byteLength);
   combined.set(iv, 0);
   combined.set(new Uint8Array(ciphertext), iv.length);
-  return bytesToBase64(combined);
+  return bytesToHex(combined);
 }
 
 /**
  * 使用 KEK 解密 Data Key
- * 輸入格式：base64(iv + ciphertext)
+ * 輸入格式：hex(iv + ciphertext)
  * 回傳：Data Key hex 字串
  */
-async function decryptDataKey(encryptedDataKey: string, kek: CryptoKey): Promise<string> {
-  const combined = base64ToBytes(encryptedDataKey);
+async function decryptDataKey(encryptedDataKey: string, dekWrapKey: CryptoKey): Promise<string> {
+  const normalized = encryptedDataKey.trim();
+  if (!isHexString(normalized)) {
+    throw new Error('Encrypted Data Key must be a valid hex string.');
+  }
+  const combined = hexToBytes(normalized.toLowerCase());
   const iv = combined.slice(0, 12);
   const ciphertext = combined.slice(12);
 
-  const plainBytes = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, kek, ciphertext);
+  const plainBytes = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, dekWrapKey, ciphertext);
   return new TextDecoder().decode(plainBytes);
 }
 
@@ -144,8 +138,8 @@ async function decryptDataKey(encryptedDataKey: string, kek: CryptoKey): Promise
 // ─────────────────────────────────────────
 
 export interface DerivedKeys {
-  /** KEK（Key Encryption Key），用於加/解密 Data Key。存在 memory 中，不落地。 */
-  kek: CryptoKey;
+  /** AMK（Account Master Key）衍生出的 DEK Wrap Key，用於包裹/解開 DEK。 */
+  dekWrapKey: CryptoKey;
   /** Auth Key，用於 SRP 計算（hex string）。存在 memory 中，不落地。 */
   authKeyHex: string;
 }
@@ -157,26 +151,26 @@ export interface DerivedKeys {
  */
 export async function deriveKeysFromPassword(
   password: string,
-  srpSalt: string,  // 用於主 KDF（Argon2id）
-  kekSalt: string,  // 用於 KEK 推導
+  srpSalt: string,  // 用於推導 AMK（Argon2id）
+  kekSalt: string,  // 用於由 AMK 派生 DEK Wrap Key 與 AuthKey
 ): Promise<DerivedKeys> {
-  const masterKey = await deriveMasterKey(password, srpSalt);
-  const kek = await deriveSubKey(masterKey, 'kek', kekSalt);
+  const amk = await deriveAccountMasterKey(password, srpSalt);
+  const dekWrapKey = await deriveDekWrapKey(amk, kekSalt);
 
   // 以原始位元組推導 SRP 使用的 Auth key
   const authKeyBits = await crypto.subtle.deriveBits(
     {
       name: 'HKDF',
-      hash: PBKDF2_HASH,
+      hash: HKDF_HASH,
       salt: hexToBytes(kekSalt),
       info: new TextEncoder().encode('kura-finance-auth-v1'),
     },
-    masterKey,
+    amk,
     256,
   );
   const authKeyHex = bytesToHex(new Uint8Array(authKeyBits));
 
-  return { kek, authKeyHex };
+  return { dekWrapKey, authKeyHex };
 }
 
 /**
@@ -189,15 +183,15 @@ export function generateSalt(): string {
 /**
  * 用 KEK 加密後端給的 plainDataKey 並上傳
  */
-export async function sealDataKey(plainDataKeyHex: string, kek: CryptoKey): Promise<string> {
-  return encryptDataKey(plainDataKeyHex, kek);
+export async function sealDataKey(plainDataKeyHex: string, dekWrapKey: CryptoKey): Promise<string> {
+  return encryptDataKey(plainDataKeyHex, dekWrapKey);
 }
 
 /**
  * 用 KEK 解密後端存的 encryptedDataKey
  */
-export async function unsealDataKey(encryptedDataKey: string, kek: CryptoKey): Promise<string> {
-  return decryptDataKey(encryptedDataKey, kek);
+export async function unsealDataKey(encryptedDataKey: string, dekWrapKey: CryptoKey): Promise<string> {
+  return decryptDataKey(encryptedDataKey, dekWrapKey);
 }
 
 /**

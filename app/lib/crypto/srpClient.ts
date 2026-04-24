@@ -27,7 +27,7 @@ import type { BackendUserProfile } from '@/lib/authApi';
 const SRP_PARAMS = new SRPParameters();
 const SRP_ROUTINES = new SRPRoutines(SRP_PARAMS);
 
-function toEvenLengthHex(value: bigint): string {
+function toCanonicalHex(value: bigint): string {
   const hex = value.toString(16).toLowerCase();
   return hex.length % 2 === 0 ? hex : `0${hex}`;
 }
@@ -83,7 +83,7 @@ export async function computeVerifier(
   const x = await SRP_ROUTINES.computeX(email, salt, authKeyHex);
   const verifier = SRP_ROUTINES.computeVerifier(x);
   // 後端通常要求 SRP verifier 為合法位元組 hex，需補齊奇數長度的前導 0。
-  return { srpVerifier: toEvenLengthHex(verifier) };
+  return { srpVerifier: toCanonicalHex(verifier) };
 }
 
 // ─────────────────────────────────────────
@@ -127,8 +127,8 @@ export async function srpFullLogin(
     '/api/auth/srp/verify',
     {
       sessionId: challenge.sessionId,
-      clientA: step2.A.toString(16),
-      clientM1: step2.M1.toString(16),
+      clientA: toCanonicalHex(step2.A),
+      clientM1: toCanonicalHex(step2.M1),
     },
   );
 

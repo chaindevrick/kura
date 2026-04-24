@@ -31,7 +31,7 @@ import type { BackendUserProfile } from '@/lib/authApi';
 
 interface CryptoSession {
   dataKeyHex: string; // 解密後的 Data Key（永遠不落地）
-  kek: CryptoKey;     // KEK（Web Crypto，不可匯出）
+  dekWrapKey: CryptoKey; // 由 AMK 派生的 DEK Wrap Key（Web Crypto，不可匯出）
 }
 
 let cryptoSession: CryptoSession | null = null;
@@ -50,7 +50,7 @@ export function clearCryptoSession(): void {
 
 /**
  * SRP 零知識登入：
- * 1. 取得 salt → 推導 KEK + authKeyHex（password 不傳後端）
+ * 1. 取得 salt → 推導 AMK 衍生金鑰（DEK Wrap Key + authKeyHex，password 不傳後端）
  * 2. SRP 握手驗證（M1/M2 互相確認）
  * 3. 解密 encryptedDataKey → 存入 cryptoSession
  */
@@ -66,7 +66,7 @@ export async function zkLogin(email: string, password: string): Promise<{ user: 
   const { srpSalt, kekSalt } = salts;
 
   // 步驟 2：推導金鑰（純前端，password 不離開此函式）
-  const { kek, authKeyHex } = await deriveKeysFromPassword(password, srpSalt, kekSalt);
+  const { dekWrapKey, authKeyHex } = await deriveKeysFromPassword(password, srpSalt, kekSalt);
 
   // 步驟 3：執行完整 SRP 握手
   const { user, encryptedDataKey } = await srpFullLogin(
@@ -76,8 +76,8 @@ export async function zkLogin(email: string, password: string): Promise<{ user: 
 
   // 步驟 4：解密 Data Key 並存入 session
   if (encryptedDataKey) {
-    const dataKeyHex = await unsealDataKey(encryptedDataKey, kek);
-    cryptoSession = { dataKeyHex, kek };
+    const dataKeyHex = await unsealDataKey(encryptedDataKey, dekWrapKey);
+    cryptoSession = { dataKeyHex, dekWrapKey };
   }
 
   return { user };
@@ -93,7 +93,7 @@ export async function zkVerifyRegistration(
   verificationCode: string,
 ): Promise<{ user: BackendUserProfile }> {
   const normalizedEmail = email.toLowerCase().trim();
-  const { srpSalt, srpVerifier, encryptedDataKey, kekSalt, plainDataKey, kek } =
+  const { srpSalt, srpVerifier, encryptedDataKey, kekSalt, plainDataKey, dekWrapKey } =
     await buildRegistrationSrpPayload(normalizedEmail, password);
   const response = await apiVerifyRegistration(
     normalizedEmail,
@@ -104,7 +104,7 @@ export async function zkVerifyRegistration(
     kekSalt,
   );
 
-  cryptoSession = { dataKeyHex: plainDataKey, kek };
+  cryptoSession = { dataKeyHex: plainDataKey, dekWrapKey };
   return { user: response.user };
 }
 
@@ -125,12 +125,12 @@ export async function zkResetPassword(email: string, code: string, newPassword: 
 
   try {
     // 步驟 1：推導新金鑰
-    const { kek, authKeyHex } = await deriveKeysFromPassword(newPassword, srpSalt, kekSalt);
+    const { dekWrapKey, authKeyHex } = await deriveKeysFromPassword(newPassword, srpSalt, kekSalt);
     const { srpVerifier } = await computeVerifier(normalizedEmail, authKeyHex, srpSalt);
 
     // 步驟 2：生成全新 Data Key 並加密（完全在前端生成，後端無法看到明文）
     const plainDataKey = generateSalt();
-    const encryptedDataKey = await sealDataKey(plainDataKey, kek);
+    const encryptedDataKey = await sealDataKey(plainDataKey, dekWrapKey);
 
     // 步驟 3：上傳至後端
     await apiResetPassword(normalizedEmail, code, srpSalt, srpVerifier, encryptedDataKey, kekSalt);
@@ -149,7 +149,7 @@ export async function zkResetPassword(email: string, code: string, newPassword: 
  * ZK 更改密碼 (Change Password)：
  * 用戶已登入，輸入新密碼。
  * 因為目前已登入，所以 cryptoSession 中有明文的 Data Key。
- * 重新推導新 KEK，並將現有 Data Key 重新加密上傳，不遺失資料。
+ * 重新推導新的 DEK Wrap Key，並將現有 Data Key 重新加密上傳，不遺失資料。
  */
 export async function zkChangePassword(email: string, newPassword: string): Promise<void> {
   if (!cryptoSession) {
@@ -161,17 +161,17 @@ export async function zkChangePassword(email: string, newPassword: string): Prom
   const kekSalt = generateSalt();
 
   // 步驟 1：推導新金鑰
-  const { kek, authKeyHex } = await deriveKeysFromPassword(newPassword, srpSalt, kekSalt);
+  const { dekWrapKey, authKeyHex } = await deriveKeysFromPassword(newPassword, srpSalt, kekSalt);
   const { srpVerifier } = await computeVerifier(normalizedEmail, authKeyHex, srpSalt);
 
-  // 步驟 2：使用新 KEK 重新加密現有明文 Data Key
-  const encryptedDataKey = await sealDataKey(cryptoSession.dataKeyHex, kek);
+  // 步驟 2：使用新的 DEK Wrap Key 重新加密現有明文 Data Key
+  const encryptedDataKey = await sealDataKey(cryptoSession.dataKeyHex, dekWrapKey);
 
   // 步驟 3：上傳至後端
   await apiChangePassword(srpSalt, srpVerifier, encryptedDataKey, kekSalt);
 
-  // 步驟 4：更新記憶體中的 session KEK
-  cryptoSession.kek = kek;
+  // 步驟 4：更新記憶體中的 session DEK Wrap Key
+  cryptoSession.dekWrapKey = dekWrapKey;
 }
 
 // ─────────────────────────────────────────
@@ -184,16 +184,16 @@ async function buildRegistrationSrpPayload(email: string, password: string): Pro
   encryptedDataKey: string;
   kekSalt: string;
   plainDataKey: string;
-  kek: CryptoKey;
+  dekWrapKey: CryptoKey;
 }> {
   const srpSalt = generateSalt();
   const kekSalt = generateSalt();
-  const { kek, authKeyHex } = await deriveKeysFromPassword(password, srpSalt, kekSalt);
+  const { dekWrapKey, authKeyHex } = await deriveKeysFromPassword(password, srpSalt, kekSalt);
   const { srpVerifier } = await computeVerifier(email, authKeyHex, srpSalt);
   const { plainDataKey } = await generateDataKey();
-  const encryptedDataKey = await sealDataKey(plainDataKey, kek);
+  const encryptedDataKey = await sealDataKey(plainDataKey, dekWrapKey);
 
-  return { srpSalt, srpVerifier, encryptedDataKey, kekSalt, plainDataKey, kek };
+  return { srpSalt, srpVerifier, encryptedDataKey, kekSalt, plainDataKey, dekWrapKey };
 }
 
 

@@ -21,6 +21,32 @@ export interface AuthResponse {
   user: BackendUserProfile;
 }
 
+function normalizeEmail(email: string): string {
+  return email.toLowerCase().trim();
+}
+
+function assertHex(value: string, fieldName: string): string {
+  const normalized = value.trim().toLowerCase();
+  if (!/^[a-f0-9]+$/.test(normalized) || normalized.length % 2 !== 0) {
+    throw new Error(`${fieldName} must be an even-length hex string.`);
+  }
+  return normalized;
+}
+
+function normalizeSrpPayload(
+  srpSalt: string,
+  srpVerifier: string,
+  encryptedDataKey: string,
+  kekSalt: string,
+): { srpSalt: string; srpVerifier: string; encryptedDataKey: string; kekSalt: string } {
+  return {
+    srpSalt: assertHex(srpSalt, 'srpSalt'),
+    srpVerifier: assertHex(srpVerifier, 'srpVerifier'),
+    encryptedDataKey: assertHex(encryptedDataKey, 'encryptedDataKey'),
+    kekSalt: assertHex(kekSalt, 'kekSalt'),
+  };
+}
+
 /**
  * Web 客戶端 API 請求
  * 自動包含 X-Client-Type: web 與 credentials: 'include'
@@ -78,11 +104,12 @@ export const changePassword = (
   encryptedDataKey: string,
   kekSalt: string
 ): Promise<{ message: string }> => {
+  const normalizedPayload = normalizeSrpPayload(srpSalt, srpVerifier, encryptedDataKey, kekSalt);
   return apiRequest<{ message: string }>(
     '/api/auth/change-password',
     {
       method: 'POST',
-      body: JSON.stringify({ srpSalt, srpVerifier, encryptedDataKey, kekSalt }),
+      body: JSON.stringify(normalizedPayload),
     }
   );
 };
@@ -91,7 +118,7 @@ export const changePassword = (
  * 忘記密碼 - 發送重設碼
  */
 export const requestPasswordReset = (email: string): Promise<{ message: string; expiresIn?: number }> => {
-  const normalizedEmail = email.toLowerCase().trim();
+  const normalizedEmail = normalizeEmail(email);
 
   return apiRequest<{ message: string; expiresIn?: number }>('/api/auth/password-reset/send-code', {
     method: 'POST',
@@ -110,16 +137,18 @@ export const resetPassword = (
   encryptedDataKey: string,
   kekSalt: string
 ): Promise<{ message: string }> => {
-  const normalizedEmail = email.toLowerCase().trim();
+  const normalizedEmail = normalizeEmail(email);
+  const normalizedResetCode = resetCode.trim();
+  if (!/^\d{6}$/.test(normalizedResetCode)) {
+    throw new Error('resetCode must be a 6-digit numeric string.');
+  }
+  const normalizedPayload = normalizeSrpPayload(srpSalt, srpVerifier, encryptedDataKey, kekSalt);
   return apiRequest<{ message: string }>('/api/auth/password-reset/verify', {
     method: 'POST',
     body: JSON.stringify({
       email: normalizedEmail,
-      resetCode: resetCode.trim(),
-      srpSalt: srpSalt.toLowerCase(),
-      srpVerifier: srpVerifier.toLowerCase(),
-      encryptedDataKey,
-      kekSalt: kekSalt.toLowerCase(),
+      resetCode: normalizedResetCode,
+      ...normalizedPayload,
     }),
   });
 };
@@ -128,7 +157,7 @@ export const resetPassword = (
  * 使用者註冊 - 第一步：請求註冊驗證碼
  */
 export const requestRegistrationCode = (email: string): Promise<{ message: string }> => {
-  const normalizedEmail = email.toLowerCase().trim();
+  const normalizedEmail = normalizeEmail(email);
   return apiRequest<{ message: string }>('/api/auth/register/request-token', {
     method: 'POST',
     body: JSON.stringify({ email: normalizedEmail }),
@@ -146,16 +175,14 @@ export const verifyRegistration = (
   encryptedDataKey: string,
   kekSalt: string,
 ): Promise<AuthResponse> => {
-  const normalizedEmail = email.toLowerCase().trim();
+  const normalizedEmail = normalizeEmail(email);
+  const normalizedPayload = normalizeSrpPayload(srpSalt, srpVerifier, encryptedDataKey, kekSalt);
   return apiRequest<AuthResponse>('/api/auth/register/confirm', {
     method: 'POST',
     body: JSON.stringify({
       email: normalizedEmail,
       verificationCode,
-      srpSalt,
-      srpVerifier,
-      encryptedDataKey,
-      kekSalt,
+      ...normalizedPayload,
     }),
   });
 };
