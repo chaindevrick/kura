@@ -199,19 +199,24 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   verifyRegistration: async (email: string, password: string, verificationCode: string) => {
     try {
+      if (password.length < 8) {
+        throw new Error('Password must be at least 8 characters.');
+      }
+
       console.debug('[AppStore] Verifying registration', { email });
       const response = await zkVerifyRegistration(email, password, verificationCode);
-      // Web 客戶端：Token 儲存在 HttpOnly Cookie 中，無需手動儲存
+      // Web 客戶端：註冊成功後必須先確認 Cookie session 已建立。
+      const profile = await fetchCurrentUserProfile();
 
       console.info('[AppStore] Registration confirmed successfully');
       set({
         authToken: 'web-client', // 標記為 web 客戶端（token 在 cookie 中）
         authStatus: 'authenticated',
         userProfile: {
-          displayName: response.user.displayName,
-          email: response.user.email,
-          avatarUrl: response.user.avatarUrl || '',
-          membershipLabel: response.user.membershipLabel || '',
+          displayName: profile.user.displayName || response.user.displayName,
+          email: profile.user.email || response.user.email,
+          avatarUrl: profile.user.avatarUrl || response.user.avatarUrl || '',
+          membershipLabel: profile.user.membershipLabel || response.user.membershipLabel || '',
         },
         authError: null,
         preferences: {
@@ -233,6 +238,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Registration confirmation failed';
       console.error('[AppStore] Registration confirmation failed', { error: errorMessage });
+      set({ authStatus: 'unauthenticated', authToken: null });
       throw error;
     }
   },

@@ -112,6 +112,11 @@ export default function RootHubPage() {
           return;
         }
 
+        if (password.length < 8) {
+          setAuthError('Password must be at least 8 characters.');
+          return;
+        }
+
         if (!registrationCode.trim()) {
           setAuthError('Verification code is required.');
           return;

@@ -181,6 +181,17 @@ export function generateSalt(): string {
 }
 
 /**
+ * 產生新的 Data Key（hex）
+ * 預設固定 32 bytes（64 hex chars）。
+ */
+export function generateDataKeyHex(byteLength: number = 32): string {
+  if (!Number.isInteger(byteLength) || byteLength <= 0) {
+    throw new Error('Data Key byte length must be a positive integer.');
+  }
+  return bytesToHex(crypto.getRandomValues(new Uint8Array(byteLength)));
+}
+
+/**
  * 用 KEK 加密後端給的 plainDataKey 並上傳
  */
 export async function sealDataKey(plainDataKeyHex: string, dekWrapKey: CryptoKey): Promise<string> {

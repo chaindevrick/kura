@@ -11,11 +11,10 @@
  * 頁面重整或登出後即消失（類似 Proton 的 session key）。
  */
 
-import { deriveKeysFromPassword, generateSalt, sealDataKey, unsealDataKey } from './keyDerivation';
+import { deriveKeysFromPassword, generateDataKeyHex, generateSalt, sealDataKey, unsealDataKey } from './keyDerivation';
 import {
   computeVerifier,
   srpFullLogin,
-  generateDataKey,
   getSRPSalts,
 } from './srpClient';
 import {
@@ -35,6 +34,8 @@ interface CryptoSession {
 }
 
 let cryptoSession: CryptoSession | null = null;
+const CRYPTO_OPERATION_ERROR_MESSAGE =
+  'Account cryptography operation failed. Please retry with an updated browser.';
 
 export function getCryptoSession(): CryptoSession | null {
   return cryptoSession;
@@ -42,6 +43,24 @@ export function getCryptoSession(): CryptoSession | null {
 
 export function clearCryptoSession(): void {
   cryptoSession = null;
+}
+
+function isCryptoOperationError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  return [
+    'OperationError',
+    'DataError',
+    'InvalidAccessError',
+    'NotSupportedError',
+  ].includes(error.name);
+}
+
+function assertDataKeyHex32(value: string): string {
+  const normalized = value.trim().toLowerCase();
+  if (!/^[a-f0-9]{64}$/.test(normalized)) {
+    throw new Error('Data Key must be a 32-byte hex string.');
+  }
+  return normalized;
 }
 
 // ─────────────────────────────────────────
@@ -69,18 +88,22 @@ export async function zkLogin(email: string, password: string): Promise<{ user: 
   const { dekWrapKey, authKeyHex } = await deriveKeysFromPassword(password, srpSalt, kekSalt);
 
   // 步驟 3：執行完整 SRP 握手
-  const { user, encryptedDataKey } = await srpFullLogin(
-    normalizedEmail,
-    authKeyHex,
-  );
-
-  // 步驟 4：解密 Data Key 並存入 session
-  if (encryptedDataKey) {
-    const dataKeyHex = await unsealDataKey(encryptedDataKey, dekWrapKey);
-    cryptoSession = { dataKeyHex, dekWrapKey };
+  const { user, encryptedDataKey } = await srpFullLogin(normalizedEmail, authKeyHex);
+  if (!encryptedDataKey?.trim()) {
+    throw new Error('Account crypto state is incomplete. Missing encryptedDataKey.');
   }
 
-  return { user };
+  try {
+    // 步驟 4：解密 Data Key 並存入 session
+    const dataKeyHex = assertDataKeyHex32(await unsealDataKey(encryptedDataKey, dekWrapKey));
+    cryptoSession = { dataKeyHex, dekWrapKey };
+    return { user };
+  } catch (error) {
+    if (isCryptoOperationError(error)) {
+      throw new Error(CRYPTO_OPERATION_ERROR_MESSAGE);
+    }
+    throw error;
+  }
 }
 
 // ─────────────────────────────────────────
@@ -93,19 +116,26 @@ export async function zkVerifyRegistration(
   verificationCode: string,
 ): Promise<{ user: BackendUserProfile }> {
   const normalizedEmail = email.toLowerCase().trim();
-  const { srpSalt, srpVerifier, encryptedDataKey, kekSalt, plainDataKey, dekWrapKey } =
-    await buildRegistrationSrpPayload(normalizedEmail, password);
-  const response = await apiVerifyRegistration(
-    normalizedEmail,
-    verificationCode,
-    srpSalt,
-    srpVerifier,
-    encryptedDataKey,
-    kekSalt,
-  );
+  try {
+    const { srpSalt, srpVerifier, encryptedDataKey, kekSalt, plainDataKey, dekWrapKey } =
+      await buildRegistrationSrpPayload(normalizedEmail, password);
+    const response = await apiVerifyRegistration(
+      normalizedEmail,
+      verificationCode,
+      srpSalt,
+      srpVerifier,
+      encryptedDataKey,
+      kekSalt,
+    );
 
-  cryptoSession = { dataKeyHex: plainDataKey, dekWrapKey };
-  return { user: response.user };
+    cryptoSession = { dataKeyHex: plainDataKey, dekWrapKey };
+    return { user: response.user };
+  } catch (error) {
+    if (isCryptoOperationError(error)) {
+      throw new Error(CRYPTO_OPERATION_ERROR_MESSAGE);
+    }
+    throw error;
+  }
 }
 
 // ─────────────────────────────────────────
@@ -129,7 +159,7 @@ export async function zkResetPassword(email: string, code: string, newPassword: 
     const { srpVerifier } = await computeVerifier(normalizedEmail, authKeyHex, srpSalt);
 
     // 步驟 2：生成全新 Data Key 並加密（完全在前端生成，後端無法看到明文）
-    const plainDataKey = generateSalt();
+    const plainDataKey = assertDataKeyHex32(generateDataKeyHex(32));
     const encryptedDataKey = await sealDataKey(plainDataKey, dekWrapKey);
 
     // 步驟 3：上傳至後端
@@ -138,8 +168,8 @@ export async function zkResetPassword(email: string, code: string, newPassword: 
     // 步驟 4：重設密碼後，需重新登入以建立 session
     clearCryptoSession();
   } catch (error) {
-    if (error instanceof Error && error.name === 'OperationError') {
-      throw new Error('Password reset failed due to a browser cryptography error. Please update your browser and try again.');
+    if (isCryptoOperationError(error)) {
+      throw new Error(CRYPTO_OPERATION_ERROR_MESSAGE);
     }
     throw error;
   }
@@ -160,18 +190,25 @@ export async function zkChangePassword(email: string, newPassword: string): Prom
   const srpSalt = generateSalt();
   const kekSalt = generateSalt();
 
-  // 步驟 1：推導新金鑰
-  const { dekWrapKey, authKeyHex } = await deriveKeysFromPassword(newPassword, srpSalt, kekSalt);
-  const { srpVerifier } = await computeVerifier(normalizedEmail, authKeyHex, srpSalt);
+  try {
+    // 步驟 1：推導新金鑰
+    const { dekWrapKey, authKeyHex } = await deriveKeysFromPassword(newPassword, srpSalt, kekSalt);
+    const { srpVerifier } = await computeVerifier(normalizedEmail, authKeyHex, srpSalt);
 
-  // 步驟 2：使用新的 DEK Wrap Key 重新加密現有明文 Data Key
-  const encryptedDataKey = await sealDataKey(cryptoSession.dataKeyHex, dekWrapKey);
+    // 步驟 2：使用新的 DEK Wrap Key 重新加密現有明文 Data Key
+    const encryptedDataKey = await sealDataKey(assertDataKeyHex32(cryptoSession.dataKeyHex), dekWrapKey);
 
-  // 步驟 3：上傳至後端
-  await apiChangePassword(srpSalt, srpVerifier, encryptedDataKey, kekSalt);
+    // 步驟 3：上傳至後端
+    await apiChangePassword(srpSalt, srpVerifier, encryptedDataKey, kekSalt);
 
-  // 步驟 4：更新記憶體中的 session DEK Wrap Key
-  cryptoSession.dekWrapKey = dekWrapKey;
+    // 步驟 4：更新記憶體中的 session DEK Wrap Key
+    cryptoSession.dekWrapKey = dekWrapKey;
+  } catch (error) {
+    if (isCryptoOperationError(error)) {
+      throw new Error(CRYPTO_OPERATION_ERROR_MESSAGE);
+    }
+    throw error;
+  }
 }
 
 // ─────────────────────────────────────────
@@ -190,7 +227,9 @@ async function buildRegistrationSrpPayload(email: string, password: string): Pro
   const kekSalt = generateSalt();
   const { dekWrapKey, authKeyHex } = await deriveKeysFromPassword(password, srpSalt, kekSalt);
   const { srpVerifier } = await computeVerifier(email, authKeyHex, srpSalt);
-  const { plainDataKey } = await generateDataKey();
+  // 註冊流程未登入，不可呼叫需要授權的 /srp/generate-data-key。
+  // Data Key 必須在前端本地生成，保持零知識。
+  const plainDataKey = assertDataKeyHex32(generateDataKeyHex(32));
   const encryptedDataKey = await sealDataKey(plainDataKey, dekWrapKey);
 
   return { srpSalt, srpVerifier, encryptedDataKey, kekSalt, plainDataKey, dekWrapKey };
