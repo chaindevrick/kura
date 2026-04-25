@@ -11,11 +11,12 @@ import { useAppStore } from '@/store/useAppStore';
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { userProfile, setDisplayName } = useAppStore();
+  const { userProfile, setDisplayName, deleteAccount } = useAppStore();
 
   const [displayName, setDisplayNameInput] = useState(userProfile.displayName);
   const [email] = useState(userProfile.email);
   const [isLoading, setIsLoading] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -42,6 +43,24 @@ export default function ProfilePage() {
       console.error('Profile update error:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    const confirmed = window.confirm('Are you sure you want to permanently delete your account? This action cannot be undone.');
+    if (!confirmed) return;
+
+    try {
+      setIsDeletingAccount(true);
+      setErrorMessage('');
+      setSuccessMessage('');
+      await deleteAccount();
+      router.push('/');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to delete account. Please try again.';
+      setErrorMessage(message);
+    } finally {
+      setIsDeletingAccount(false);
     }
   };
 
@@ -128,6 +147,17 @@ export default function ProfilePage() {
           </Button>
           <Button onClick={handleSave} disabled={isLoading}>
             {isLoading ? 'Saving...' : 'Save Changes'}
+          </Button>
+        </div>
+
+        <div className="mt-8 pt-6 border-t border-[var(--kura-border)]">
+          <Button
+            onClick={handleDeleteAccount}
+            variant="destructive"
+            disabled={isDeletingAccount}
+            className="w-full sm:w-auto"
+          >
+            {isDeletingAccount ? 'Deleting Account...' : 'Delete Account'}
           </Button>
         </div>
       </div>

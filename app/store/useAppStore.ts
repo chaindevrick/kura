@@ -3,6 +3,7 @@ import {
   fetchCurrentUserProfile,
   updateCurrentUserProfile,
   logoutUser,
+  deleteCurrentUserAccount,
   requestPasswordReset as requestPasswordResetApi,
   requestRegistrationCode as requestRegistrationCodeApi,
 } from '@/lib/authApi';
@@ -47,6 +48,7 @@ interface AppState {
   // 認證方法
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
   changePassword: (resetCode: string, newPassword: string) => Promise<void>;
   requestPasswordReset: (email: string) => Promise<void>;
   resetPassword: (email: string, resetCode: string, newPassword: string) => Promise<void>;
@@ -140,6 +142,26 @@ export const useAppStore = create<AppState>((set, get) => ({
       console.info('[AppStore] Logout successful');
     } catch (error) {
       console.error('[AppStore] Logout failed', error);
+      throw error;
+    }
+  },
+
+  deleteAccount: async () => {
+    try {
+      console.info('[AppStore] Deleting account');
+      await deleteCurrentUserAccount();
+      clearCryptoSession();
+      set({
+        authToken: null,
+        authStatus: 'unauthenticated',
+        userProfile: { displayName: '', email: '', avatarUrl: '', membershipLabel: '' },
+        plaidLinkToken: null,
+        authError: null,
+      });
+      console.info('[AppStore] Account deleted successfully');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Account deletion failed';
+      console.error('[AppStore] Account deletion failed', { error: errorMessage });
       throw error;
     }
   },

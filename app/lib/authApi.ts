@@ -72,6 +72,16 @@ export const logoutUser = (): Promise<{ message: string }> => {
 };
 
 /**
+ * 刪除目前使用者帳戶
+ * Web 客戶端：透過 HttpOnly Cookie 驗證
+ */
+export const deleteCurrentUserAccount = (): Promise<{ success: boolean; message: string }> => {
+  return apiRequest<{ success: boolean; message: string }>('/api/auth/me', {
+    method: 'DELETE',
+  });
+};
+
+/**
  * 取得目前使用者資料
  * Cookie 會自動送出，無需手動傳遞 token
  */
