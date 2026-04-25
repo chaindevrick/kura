@@ -37,6 +37,7 @@ export default function UserSettingsDrawer({ isOpen, onClose, anchorRef }: UserS
   const [mounted, setMounted] = useState(false);
   const [position, setPosition] = useState({ top: 0, right: 0 });
   const [themeMode, setThemeMode] = useState<ThemeMode>(getInitialThemeMode);
+  const [isAppearanceOpen, setIsAppearanceOpen] = useState(false);
   const router = useRouter();
   const { userProfile, logout } = useAppStore();
 
@@ -69,15 +70,20 @@ export default function UserSettingsDrawer({ isOpen, onClose, anchorRef }: UserS
     return () => media.removeEventListener('change', handleChange);
   }, [themeMode]);
 
+  const closeDrawer = () => {
+    setIsAppearanceOpen(false);
+    onClose();
+  };
+
   const handleLogout = async () => {
     await logout();
-    onClose();
+    closeDrawer();
     router.push('/');
   };
 
   const handleMenuClick = (callback: () => void) => {
     callback();
-    onClose();
+    closeDrawer();
   };
 
   if (!mounted) return null;
@@ -92,7 +98,7 @@ export default function UserSettingsDrawer({ isOpen, onClose, anchorRef }: UserS
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
             className="fixed inset-0 z-[9998]"
-            onClick={onClose}
+            onClick={closeDrawer}
           />
 
           <motion.div
@@ -106,8 +112,59 @@ export default function UserSettingsDrawer({ isOpen, onClose, anchorRef }: UserS
               top: position.top,
               right: position.right,
             }}
-            className="z-[9999] w-80"
+            className="z-[9999] w-80 relative"
           >
+            <AnimatePresence>
+              {isAppearanceOpen && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.96, x: 6 }}
+                  animate={{ opacity: 1, scale: 1, x: 0 }}
+                  exit={{ opacity: 0, scale: 0.96, x: 6 }}
+                  transition={{ duration: 0.14 }}
+                  className="absolute right-[calc(100%+0.5rem)] top-56 w-52 z-[10000]"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Card className="shadow-lg">
+                    <CardContent className="p-3 space-y-2">
+                      <CardDescription className="text-xs uppercase tracking-wide">Theme</CardDescription>
+                      <Button
+                        type="button"
+                        variant={themeMode === 'light' ? 'default' : 'secondary'}
+                        className="w-full justify-start"
+                        onClick={() => {
+                          setThemeMode('light');
+                          setIsAppearanceOpen(false);
+                        }}
+                      >
+                        Light
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={themeMode === 'dark' ? 'default' : 'secondary'}
+                        className="w-full justify-start"
+                        onClick={() => {
+                          setThemeMode('dark');
+                          setIsAppearanceOpen(false);
+                        }}
+                      >
+                        Dark
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={themeMode === 'system' ? 'default' : 'secondary'}
+                        className="w-full justify-start"
+                        onClick={() => {
+                          setThemeMode('system');
+                          setIsAppearanceOpen(false);
+                        }}
+                      >
+                        System
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              )}
+            </AnimatePresence>
             <Card>
               <CardHeader className="space-y-3">
                 <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#8B5CF6] to-[#6D28D9] flex items-center justify-center overflow-hidden">
@@ -142,32 +199,15 @@ export default function UserSettingsDrawer({ isOpen, onClose, anchorRef }: UserS
                   </Button>
                 </div>
                 <Separator />
-                <div className="space-y-2">
-                  <CardDescription className="text-xs uppercase tracking-wide">Appearance</CardDescription>
-                  <div className="grid grid-cols-3 gap-2">
-                    <Button
-                      type="button"
-                      variant={themeMode === 'light' ? 'default' : 'secondary'}
-                      onClick={() => setThemeMode('light')}
-                    >
-                      Light
-                    </Button>
-                    <Button
-                      type="button"
-                      variant={themeMode === 'dark' ? 'default' : 'secondary'}
-                      onClick={() => setThemeMode('dark')}
-                    >
-                      Dark
-                    </Button>
-                    <Button
-                      type="button"
-                      variant={themeMode === 'system' ? 'default' : 'secondary'}
-                      onClick={() => setThemeMode('system')}
-                    >
-                      System
-                    </Button>
-                  </div>
-                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="w-full justify-between"
+                  onClick={() => setIsAppearanceOpen((prev) => !prev)}
+                >
+                  <span>Appearance</span>
+                  <span className="text-[var(--kura-text-secondary)]">{isAppearanceOpen ? '˅' : '>'}</span>
+                </Button>
                 <Separator />
                 <Button variant="destructive" className="w-full" onClick={handleLogout}>
                   Log Out
