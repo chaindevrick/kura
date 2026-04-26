@@ -17,7 +17,9 @@
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.4",
-    "@tanstack/react-query": "^5.96.2",
+    "@reown/appkit": "^1.8.19",
+    "@reown/appkit-adapter-wagmi": "^1.8.19",
+    "@tanstack/react-query": "^5.100.5",
     "@walletconnect/ethereum-provider": "^2.23.9",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -31,8 +33,8 @@
     "recharts": "^3.8.1",
     "tailwind-merge": "^3.5.0",
     "tssrp6a": "^3.0.0",
-    "viem": "^2.47.10",
-    "wagmi": "^3.6.0",
+    "viem": "^2.48.4",
+    "wagmi": "^3.6.5",
     "zustand": "^5.0.12"
   },
   "devDependencies": {

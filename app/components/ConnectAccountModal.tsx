@@ -7,7 +7,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import { useAppStore } from '@/store/useAppStore';
 import { useFinanceStore } from '@/store/useFinanceStore';
-import { useConnect } from 'wagmi';
+import { useAppKit } from '@reown/appkit/react';
+import { useAccount } from 'wagmi';
 import { usePlaidLink, type PlaidLinkOnSuccessMetadata } from 'react-plaid-link';
 import { usePlaidReady } from '@/context/PlaidProvider';
 import {
@@ -42,7 +43,14 @@ function ConnectAccountModalContent({
   const authToken = useAppStore((state) => state.authToken);
   const setPlaidLinkToken = useAppStore((state) => state.setPlaidLinkToken);
   const hydratePlaidFinanceData = useFinanceStore((state) => state.hydratePlaidFinanceData);
-  const { connectAsync, connectors } = useConnect();
+  const { isConnected } = useAccount();
+  const { open: openAppKit } = useAppKit();
+
+  useEffect(() => {
+    if (!isOpen) {
+      setPlaidError(null);
+    }
+  }, [isOpen]);
 
   const onPlaidSuccess = useCallback(
     async (publicToken: string, metadata: PlaidLinkOnSuccessMetadata) => {
@@ -231,21 +239,12 @@ function ConnectAccountModalContent({
     setPlaidError(null);
 
     try {
-      const reownConnector = connectors.find(
-        (connector) =>
-          connector.id.toLowerCase().includes('walletconnect') ||
-          connector.type.toLowerCase().includes('walletconnect')
-      );
-
-      if (!reownConnector) {
-        setPlaidError(
-          'Reown WalletConnect is not configured. Please set NEXT_PUBLIC_REOWN_PROJECT_ID and retry.',
-        );
+      if (isConnected) {
+        // 已連線時直接打開 Reown 管理頁。
+        await openAppKit({ view: 'Account' });
         return;
       }
-
-      // 僅使用 Reown (WalletConnect) 連線，確保會彈出 WalletConnect 掃碼畫面。
-      await connectAsync({ connector: reownConnector });
+      await openAppKit();
       onClose();
     } catch (error: unknown) {
       const walletError = error as { code?: number; message?: string };
@@ -253,11 +252,11 @@ function ConnectAccountModalContent({
 
       if (walletError.code === 4001 || message.includes('user rejected') || message.includes('rejected')) {
         // 使用者主動取消連線，維持安靜不提示。
-      } else if (message.includes('provider') && message.includes('not found')) {
-        setPlaidError('WalletConnect provider not found. Please retry and ensure Reown project configuration is valid.');
+      } else if (message.includes('already connected')) {
+        await openAppKit({ view: 'Account' });
       } else {
         console.error('Wallet connection failed', error);
-        setPlaidError('WalletConnect connection failed. Please retry from the Reown QR modal.');
+        setPlaidError('Reown connection failed. Please retry from the wallet modal.');
       }
     } finally {
       setIsConnecting(null);
@@ -351,8 +350,14 @@ function ConnectAccountModalContent({
                       </svg>
                     </div>
                     <div className="flex-1">
-                      <div className="text-white font-bold text-base mb-0.5 group-hover:text-[#3B82F6] transition-colors">Web3 Wallet</div>
-                      <div className="text-xs text-gray-500 line-clamp-2">Connect Metamask, Phantom, Trust Wallet, and 100+ decentralized wallets via Reown.</div>
+                      <div className="text-white font-bold text-base mb-0.5 group-hover:text-[#3B82F6] transition-colors">
+                        {isConnected ? 'Manage Web3 Wallet' : 'Web3 Wallet'}
+                      </div>
+                      <div className="text-xs text-gray-500 line-clamp-2">
+                        {isConnected
+                          ? 'Wallet is connected. Click to open Reown account manager (disconnect / switch wallet).'
+                          : 'Connect Metamask, Phantom, Trust Wallet, and 100+ decentralized wallets via Reown.'}
+                      </div>
                     </div>
                     {isConnecting === 'reown' ? (
                       <div className="w-5 h-5 border-2 border-[#3B82F6] border-t-transparent rounded-full animate-spin shrink-0" />
