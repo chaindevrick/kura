@@ -19,7 +19,7 @@ interface PlanCard {
 
 const PLAN_CARDS: PlanCard[] = [
   {
-    name: 'Basic',
+    name: 'Kura Basic',
     monthlyPriceLabel: 'Free',
     summary: 'Your private finance command center, free forever',
     items: [
@@ -30,7 +30,7 @@ const PLAN_CARDS: PlanCard[] = [
     ctaLabel: 'Get Started Free',
   },
   {
-    name: 'Pro',
+    name: 'Kura Pro',
     monthlyPriceLabel: '$12.99 / mo',
     annualPriceLabel: '$129.99 billed annually (~$10.83/mo)',
     summary: 'Smarter market insights and everyday money control',
@@ -44,7 +44,7 @@ const PLAN_CARDS: PlanCard[] = [
     ctaLabel: 'Start Pro Trial',
   },
   {
-    name: 'Ultimate',
+    name: 'Kura Ultimate',
     monthlyPriceLabel: '$29.99 / mo',
     annualPriceLabel: '$299.99 billed annually (~$24.99/mo)',
     summary: 'Institutional-grade analytics for serious operators',
