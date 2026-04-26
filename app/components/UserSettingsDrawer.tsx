@@ -141,6 +141,9 @@ export default function UserSettingsDrawer({ isOpen, onClose, anchorRef }: UserS
                   <Button variant="ghost" className="justify-start" onClick={() => handleMenuClick(() => router.push('/dashboard/security'))}>
                     Security
                   </Button>
+                  <Button variant="ghost" className="justify-start" onClick={() => handleMenuClick(() => router.push('/dashboard/plan-billing'))}>
+                    Plan & Billing
+                  </Button>
                   <Button variant="ghost" className="justify-start" asChild>
                     <a href="https://kura-finance.com/privacy" target="_blank" rel="noopener noreferrer">
                       Privacy ↗
