@@ -239,7 +239,7 @@ export default function AccountsPage() {
         <p className="text-4xl font-medium">{isBalanceHidden ? '••••••' : `${availableBalance < 0 ? '-' : ''}${formatCurrency(availableBalance)}`}</p>
       </div>
 
-      <div className="rounded-2xl border border-[var(--kura-border)] bg-[var(--kura-surface)] overflow-hidden">
+      <div className="rounded-2xl border border-[var(--kura-border)] bg-[var(--kura-surface)] overflow-visible">
         <div className="grid grid-cols-[1.7fr_0.7fr_auto] gap-4 px-4 py-3 text-xs uppercase tracking-wide text-[var(--kura-text-secondary)] border-b border-[var(--kura-border)]">
           <div>Account</div>
           <div>Balance</div>
