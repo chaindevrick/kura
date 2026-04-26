@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -22,11 +22,32 @@ function getAccountDisplayName(name: string, mask?: string): string {
 export default function AccountsPage() {
   const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<'bank' | 'investment' | 'wallet'>('bank');
+  const [openMenuAccountId, setOpenMenuAccountId] = useState<string | null>(null);
+  const [nicknameByAccountId, setNicknameByAccountId] = useState<Record<string, string>>({});
+  const [unlinkingAccountId, setUnlinkingAccountId] = useState<string | null>(null);
   const accounts = useFinanceStore((state) => state.accounts);
   const investmentAccounts = useFinanceStore((state) => state.investmentAccounts);
   const investments = useFinanceStore((state) => state.investments);
   const isLoadingPlaidData = useFinanceStore((state) => state.isLoadingPlaidData);
+  const disconnectBankingAccount = useFinanceStore((state) => state.disconnectBankingAccount);
+  const disconnectInvestmentAccount = useFinanceStore((state) => state.disconnectInvestmentAccount);
   const isBalanceHidden = useAppStore((state) => state.isBalanceHidden);
+
+  useEffect(() => {
+    const handleOutsideClick = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (
+        target.closest('[data-account-menu-root="true"]') ||
+        target.closest('[data-account-menu-trigger="true"]')
+      ) {
+        return;
+      }
+      setOpenMenuAccountId(null);
+    };
+
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
 
   const availableBalance = useMemo(() => {
     const getInvestmentValue = (accountId: string): number => {
@@ -67,14 +88,18 @@ export default function AccountsPage() {
       return accounts.map((account) => {
         const balanceText = account.type === 'credit' ? `-${formatCurrency(account.balance)}` : formatCurrency(account.balance);
         const maskedBalance = isBalanceHidden ? '••••••' : balanceText;
+        const nickname = nicknameByAccountId[account.id]?.trim();
+        const displayName = getAccountDisplayName(nickname || account.name, account.mask);
 
         return {
           id: account.id,
           logo: account.logo,
-          displayName: getAccountDisplayName(account.type, account.mask),
+          displayName,
           typeLabel: account.type,
+          institutionLabel: account.name,
           maskedBalance,
           balanceTone: account.type === 'credit' ? 'credit' as const : 'positive' as const,
+          unlinkTarget: 'bank' as const,
         };
       });
     }
@@ -84,13 +109,16 @@ export default function AccountsPage() {
         .filter((account) => account.type === 'Broker' || account.type === 'Exchange')
         .map((account) => {
           const totalValue = getInvestmentValue(account.id);
+          const nickname = nicknameByAccountId[account.id]?.trim();
           return {
             id: account.id,
             logo: account.logo,
-            displayName: account.name,
+            displayName: nickname || account.name,
             typeLabel: account.type,
+            institutionLabel: account.name,
             maskedBalance: isBalanceHidden ? '••••••' : formatCurrency(totalValue),
             balanceTone: 'positive' as const,
+            unlinkTarget: 'investment' as const,
           };
         });
 
@@ -101,22 +129,54 @@ export default function AccountsPage() {
       .filter((account) => account.type === 'Web3 Wallet')
       .map((account) => {
         const totalValue = getInvestmentValue(account.id);
+        const nickname = nicknameByAccountId[account.id]?.trim();
         return {
           id: account.id,
           logo: account.logo,
-          displayName: account.name,
+          displayName: nickname || account.name,
           typeLabel: account.type,
+          institutionLabel: account.name,
           maskedBalance: isBalanceHidden ? '••••••' : formatCurrency(totalValue),
           balanceTone: 'positive' as const,
+          unlinkTarget: 'investment' as const,
         };
       });
-  }, [activeSection, accounts, investmentAccounts, investments, isBalanceHidden]);
+  }, [activeSection, accounts, investmentAccounts, investments, isBalanceHidden, nicknameByAccountId]);
 
   const emptyStateText = useMemo(() => {
     if (activeSection === 'bank') return 'No bank accounts connected yet.';
     if (activeSection === 'investment') return 'No investment accounts connected yet.';
     return 'No wallet addresses connected yet.';
   }, [activeSection]);
+
+  const handleEditNickname = (accountId: string, currentDisplayName: string) => {
+    const nextNickname = window.prompt('Edit nickname', currentDisplayName);
+    if (nextNickname === null) return;
+
+    const trimmed = nextNickname.trim();
+    setNicknameByAccountId((prev) => {
+      if (!trimmed) {
+        const { [accountId]: _removed, ...rest } = prev;
+        return rest;
+      }
+      return { ...prev, [accountId]: trimmed };
+    });
+    setOpenMenuAccountId(null);
+  };
+
+  const handleUnlink = async (accountId: string, unlinkTarget: 'bank' | 'investment') => {
+    setOpenMenuAccountId(null);
+    setUnlinkingAccountId(accountId);
+    try {
+      if (unlinkTarget === 'bank') {
+        await disconnectBankingAccount(accountId);
+      } else {
+        disconnectInvestmentAccount(accountId);
+      }
+    } finally {
+      setUnlinkingAccountId(null);
+    }
+  };
 
   return (
     <div className="w-full pb-24 px-6 sm:px-10 lg:px-16 pt-8 max-w-6xl mx-auto">
@@ -127,40 +187,42 @@ export default function AccountsPage() {
       <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
         <div>
           <h1 className="text-3xl font-semibold tracking-tight">Accounts</h1>
-          <div className="mt-3 flex items-center gap-5 text-sm text-[var(--kura-text-secondary)]">
-            <button
-              type="button"
-              onClick={() => setActiveSection('bank')}
-              className={`pb-2 border-b transition-colors ${
-                activeSection === 'bank'
-                  ? 'border-[var(--kura-primary)] text-[var(--kura-text)]'
-                  : 'border-transparent hover:text-[var(--kura-text)]'
-              }`}
-            >
-              Bank accounts
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveSection('investment')}
-              className={`pb-2 border-b transition-colors ${
-                activeSection === 'investment'
-                  ? 'border-[var(--kura-primary)] text-[var(--kura-text)]'
-                  : 'border-transparent hover:text-[var(--kura-text)]'
-              }`}
-            >
-              Investment accounts
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveSection('wallet')}
-              className={`pb-2 border-b transition-colors ${
-                activeSection === 'wallet'
-                  ? 'border-[var(--kura-primary)] text-[var(--kura-text)]'
-                  : 'border-transparent hover:text-[var(--kura-text)]'
-              }`}
-            >
-              Wallet address
-            </button>
+          <div className="mt-3 border-b border-[var(--kura-border)]">
+            <div className="flex items-center gap-5 text-sm text-[var(--kura-text-secondary)] -mb-px">
+              <button
+                type="button"
+                onClick={() => setActiveSection('bank')}
+                className={`cursor-pointer pb-2 border-b-2 transition-colors ${
+                  activeSection === 'bank'
+                    ? 'border-[var(--kura-primary)] text-[var(--kura-text)]'
+                    : 'border-transparent hover:text-[var(--kura-text)]'
+                }`}
+              >
+                Bank accounts
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveSection('investment')}
+                className={`cursor-pointer pb-2 border-b-2 transition-colors ${
+                  activeSection === 'investment'
+                    ? 'border-[var(--kura-primary)] text-[var(--kura-text)]'
+                    : 'border-transparent hover:text-[var(--kura-text)]'
+                }`}
+              >
+                Investment accounts
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveSection('wallet')}
+                className={`cursor-pointer pb-2 border-b-2 transition-colors ${
+                  activeSection === 'wallet'
+                    ? 'border-[var(--kura-primary)] text-[var(--kura-text)]'
+                    : 'border-transparent hover:text-[var(--kura-text)]'
+                }`}
+              >
+                Wallet address
+              </button>
+            </div>
           </div>
         </div>
 
@@ -177,9 +239,10 @@ export default function AccountsPage() {
       </div>
 
       <div className="rounded-2xl border border-[var(--kura-border)] bg-[var(--kura-surface)] overflow-hidden">
-        <div className="grid grid-cols-[1.7fr_0.7fr] gap-4 px-4 py-3 text-xs uppercase tracking-wide text-[var(--kura-text-secondary)] border-b border-[var(--kura-border)]">
+        <div className="grid grid-cols-[1.7fr_0.7fr_auto] gap-4 px-4 py-3 text-xs uppercase tracking-wide text-[var(--kura-text-secondary)] border-b border-[var(--kura-border)]">
           <div>Account</div>
           <div>Balance</div>
+          <div className="w-8" />
         </div>
 
         {isLoadingPlaidData ? (
@@ -193,7 +256,7 @@ export default function AccountsPage() {
           </div>
         ) : (
           rows.map((row) => (
-            <div key={row.id} className="grid grid-cols-[1.7fr_0.7fr] gap-4 px-4 py-3 items-center border-b border-[var(--kura-border-light)] last:border-b-0">
+            <div key={row.id} className="grid grid-cols-[1.7fr_0.7fr_auto] gap-4 px-4 py-3 items-center border-b border-[var(--kura-border-light)] last:border-b-0">
               <div className="flex items-center gap-3 min-w-0">
                 <div className="w-8 h-8 rounded-full bg-white overflow-hidden flex items-center justify-center">
                   {row.logo ? (
@@ -204,13 +267,50 @@ export default function AccountsPage() {
                 </div>
                 <div className="min-w-0">
                   <p className="text-sm font-medium truncate">{row.displayName}</p>
-                  <p className="text-xs text-[var(--kura-text-secondary)]">{row.typeLabel}</p>
+                  <p className="text-xs text-[var(--kura-text-secondary)] truncate">
+                    {row.typeLabel} • {row.institutionLabel}
+                  </p>
                 </div>
               </div>
 
-              <p className={`text-sm font-mono ${row.balanceTone === 'credit' ? 'text-red-400' : 'text-emerald-400'}`}>
+              <p className={`text-sm font-mono ${row.balanceTone === 'credit' ? 'text-[var(--kura-error)]' : 'text-[var(--kura-success)]'}`}>
                 {row.maskedBalance}
               </p>
+
+              <div className="relative">
+                <button
+                  type="button"
+                  data-account-menu-trigger="true"
+                  onClick={() => setOpenMenuAccountId((prev) => (prev === row.id ? null : row.id))}
+                  className="w-8 h-8 rounded-md border border-transparent hover:border-[var(--kura-border)] hover:bg-[var(--kura-border-light)] text-[var(--kura-text-secondary)] hover:text-[var(--kura-text)] transition-colors disabled:opacity-50"
+                  disabled={unlinkingAccountId === row.id}
+                  aria-label="Account actions"
+                >
+                  ⋮
+                </button>
+
+                {openMenuAccountId === row.id && (
+                  <div
+                    data-account-menu-root="true"
+                    className="absolute right-0 top-9 z-20 w-40 rounded-xl border border-[var(--kura-border)] bg-[var(--kura-surface)] shadow-lg p-1"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => handleEditNickname(row.id, row.displayName)}
+                      className="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-[var(--kura-border-light)] transition-colors"
+                    >
+                      Edit Nickname
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void handleUnlink(row.id, row.unlinkTarget)}
+                      className="w-full text-left px-3 py-2 text-sm rounded-lg text-[var(--kura-error)] hover:bg-[var(--kura-border-light)] transition-colors"
+                    >
+                      Unlink
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           ))
         )}
