@@ -12,6 +12,7 @@ import { useAppStore } from '@/store/useAppStore';
 export default function ProfilePage() {
   const router = useRouter();
   const { userProfile, setDisplayName, deleteAccount } = useAppStore();
+  const membershipLabel = userProfile.membershipLabel;
 
   const [displayName, setDisplayNameInput] = useState(userProfile.displayName);
   const [email] = useState(userProfile.email);
@@ -129,12 +130,20 @@ export default function ProfilePage() {
             <CardTitle>Display Name</CardTitle>
           </CardHeader>
           <CardContent>
-            <Input
-              type="text"
-              value={displayName}
-              onChange={(e) => setDisplayNameInput(e.target.value)}
-              placeholder="Enter your display name"
-            />
+            <div className="flex items-center gap-2">
+              <Input
+                type="text"
+                value={displayName}
+                onChange={(e) => setDisplayNameInput(e.target.value)}
+                placeholder="Enter your display name"
+                className="flex-1"
+              />
+              {membershipLabel && (
+                <span className="text-[10px] leading-none px-2 py-1 rounded-full border border-[var(--kura-border)] text-[var(--kura-text-secondary)] bg-[var(--kura-bg-light)] whitespace-nowrap">
+                  {membershipLabel}
+                </span>
+              )}
+            </div>
             <CardDescription className="mt-2">
               This is how your name appears across the platform
             </CardDescription>

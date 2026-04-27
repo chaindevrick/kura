@@ -60,6 +60,13 @@ interface SyncWalletPayload {
   nativeBalance: number;
 }
 
+interface SyncWalletAssetsPayload {
+  address: string;
+  chainId: number;
+  chainName: string;
+  assets: Investment[];
+}
+
 
 interface FinanceState {
   // 資料
@@ -98,6 +105,7 @@ interface FinanceState {
   
   // Web3 Wallet 操作
   syncConnectedWalletPosition: (payload: SyncWalletPayload) => Promise<void>;
+  syncConnectedWalletAssets: (payload: SyncWalletAssetsPayload) => void;
   removeConnectedWalletPosition: (address: string, chainId: number) => void;
   
   // API 資產歷史
@@ -398,17 +406,57 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
     
     console.info('[FinanceStore] Wallet position synced', { address: normalizedAddress, balance: nativeBalance });
   },
+
+  syncConnectedWalletAssets: ({
+    address,
+    chainId,
+    chainName,
+    assets,
+  }) => {
+    const normalizedAddress = address.toLowerCase();
+    const accountId = `wallet-${chainId}-${normalizedAddress}`;
+    const walletAccount: InvestmentAccount = {
+      id: accountId,
+      name: `${chainName} Wallet`,
+      type: 'Web3 Wallet',
+      logo: 'https://www.google.com/s2/favicons?domain=reown.com&sz=128',
+    };
+
+    const normalizedAssets: Investment[] = assets.map((asset, index) => ({
+      ...asset,
+      id: asset.id || `wallet-asset-${chainId}-${normalizedAddress}-${index}`,
+      accountId,
+      type: asset.type === 'stock' ? 'stock' : 'crypto',
+    }));
+
+    set((state) => ({
+      investmentAccounts: [
+        ...state.investmentAccounts.filter((account) => account.id !== accountId),
+        walletAccount,
+      ],
+      investments: [
+        ...state.investments.filter((investment) => investment.accountId !== accountId),
+        ...normalizedAssets,
+      ],
+    }));
+    void persistFinanceCache(get());
+
+    console.info('[FinanceStore] Wallet assets synced', {
+      address: normalizedAddress,
+      chainId,
+      assetsCount: normalizedAssets.length,
+    });
+  },
   
   removeConnectedWalletPosition: (address, chainId) => {
     const normalizedAddress = address.toLowerCase();
     const accountId = `wallet-${chainId}-${normalizedAddress}`;
-    const assetId = `wallet-native-${chainId}-${normalizedAddress}`;
 
     console.debug('[FinanceStore] Removing wallet position', { address: normalizedAddress, chainId });
 
     set((state) => ({
       investmentAccounts: state.investmentAccounts.filter((account) => account.id !== accountId),
-      investments: state.investments.filter((investment) => investment.id !== assetId),
+      investments: state.investments.filter((investment) => investment.accountId !== accountId),
     }));
     void persistFinanceCache(get());
     

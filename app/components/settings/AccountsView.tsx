@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion, Variants } from 'framer-motion';
 import { PlaidApiError, disconnectPlaidAccount as disconnectPlaidAccountApi } from '@/lib/plaidApi';
+import { unlinkDeBankAddress } from '@/lib/debankApi';
 import { useFinanceStore } from '../../store/useFinanceStore';
 import { useAppStore } from '@/store/useAppStore';
 import { useAccount, useChainId, useDisconnect } from 'wagmi';
@@ -11,6 +12,11 @@ import { AccountListItem, PendingDisconnect } from './accounts/types';
 interface AccountsViewProps {
   variants: Variants;
   onConnectAccount: () => void;
+}
+
+function getAddressFromWalletAccountId(accountId: string): string | null {
+  const match = accountId.match(/^wallet-\d+-(0x[a-fA-F0-9]+)$/);
+  return match?.[1]?.toLowerCase() ?? null;
 }
 
 export default function AccountsView({ variants, onConnectAccount }: AccountsViewProps) {
@@ -82,6 +88,11 @@ export default function AccountsView({ variants, onConnectAccount }: AccountsVie
           } catch {
             // 即使錢包 provider 斷線失敗，仍維持 UI / store 狀態一致。
           }
+        }
+
+        const walletAddress = getAddressFromWalletAccountId(accountId);
+        if (walletAddress && authToken) {
+          await unlinkDeBankAddress(walletAddress);
         }
 
         disconnectInvestmentAccount(accountId);

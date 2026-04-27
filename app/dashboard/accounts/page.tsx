@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { useFinanceStore } from '@/store/useFinanceStore';
 import { useAppStore } from '@/store/useAppStore';
 import { PlaidApiError, disconnectPlaidItem } from '@/lib/plaidApi';
+import { unlinkDeBankAddress } from '@/lib/debankApi';
 
 const ConnectAccountModal = dynamic(() => import('@/components/ConnectAccountModal'), {
   ssr: false,
@@ -36,6 +37,11 @@ function parseBankAccountName(rawName: string, mask?: string): { institutionName
 function parseInstitutionName(rawName: string): string {
   const [institutionPart] = rawName.split('·').map((part) => part.trim());
   return institutionPart || rawName;
+}
+
+function getAddressFromWalletAccountId(accountId: string): string | null {
+  const match = accountId.match(/^wallet-\d+-(0x[a-fA-F0-9]+)$/);
+  return match?.[1]?.toLowerCase() ?? null;
 }
 
 function getInvestmentAccountLabel(rawName: string, accountType: 'Broker' | 'Exchange' | 'Web3 Wallet'): string {
@@ -218,6 +224,12 @@ export default function AccountsPage() {
         await disconnectPlaidItem(accountId);
         await hydratePlaidFinanceData();
       } else {
+        if (accountType === 'Web3 Wallet') {
+          const walletAddress = getAddressFromWalletAccountId(accountId);
+          if (walletAddress) {
+            await unlinkDeBankAddress(walletAddress);
+          }
+        }
         disconnectInvestmentAccount(accountId);
       }
     } catch (error) {

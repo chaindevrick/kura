@@ -1,8 +1,21 @@
 "use client";
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useAppStore } from '@/store/useAppStore';
-import { useFinanceStore } from '@/store/useFinanceStore';
+import { type Investment, useFinanceStore } from '@/store/useFinanceStore';
+import { useAccount, useChainId } from 'wagmi';
+import { fetchDeBankProtocolPositions, fetchDeBankTokenPositions } from '@/lib/debankApi';
+
+const CHAIN_NAME_BY_ID: Record<number, string> = {
+  1: 'Ethereum',
+  137: 'Polygon',
+  42161: 'Arbitrum',
+};
+
+function normalizeAddress(value: string | undefined): string | null {
+  if (!value) return null;
+  return value.toLowerCase();
+}
 
 export default function AppSessionHydrator() {
   const authToken = useAppStore((state) => state.authToken);
@@ -13,6 +26,11 @@ export default function AppSessionHydrator() {
   const hydrateEncryptedFinanceCache = useFinanceStore((state) => state.hydrateEncryptedFinanceCache);
   const hydratePlaidFinanceData = useFinanceStore((state) => state.hydratePlaidFinanceData);
   const clearPlaidFinanceData = useFinanceStore((state) => state.clearPlaidFinanceData);
+  const syncConnectedWalletAssets = useFinanceStore((state) => state.syncConnectedWalletAssets);
+  const { address, isConnected } = useAccount();
+  const chainId = useChainId();
+  const lastSyncedWalletKeyRef = useRef<string | null>(null);
+  const lastConnectedWalletRef = useRef<{ address: string; chainId: number } | null>(null);
 
   // 首次載入時從儲存狀態初始化認證
   useEffect(() => {
@@ -50,6 +68,92 @@ export default function AppSessionHydrator() {
       clearPlaidFinanceData();
     }
   }, [authStatus, clearPlaidFinanceData]);
+
+  useEffect(() => {
+    if (authStatus !== 'authenticated' || !isConnected) {
+      return;
+    }
+
+    const normalizedAddress = normalizeAddress(address);
+    if (!normalizedAddress) {
+      return;
+    }
+
+    const walletKey = `${chainId}:${normalizedAddress}`;
+    if (lastSyncedWalletKeyRef.current === walletKey) {
+      return;
+    }
+
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const [tokens, protocols] = await Promise.all([
+          fetchDeBankTokenPositions(normalizedAddress, true),
+          fetchDeBankProtocolPositions(normalizedAddress, true),
+        ]);
+
+        if (cancelled) {
+          return;
+        }
+
+        const accountId = `wallet-${chainId}-${normalizedAddress}`;
+        const tokenAssets: Investment[] = tokens.map((token) => ({
+          id: `wallet-token-${chainId}-${normalizedAddress}-${token.id}`,
+          accountId,
+          symbol: token.symbol || 'TOKEN',
+          name: token.name || token.symbol || 'Token',
+          holdings: token.amount,
+          currentPrice: token.price,
+          change24h: 0,
+          type: 'crypto',
+          logo: token.logo,
+        }));
+        const protocolAssets: Investment[] = protocols
+          .filter((protocol) => protocol.usdValue > 0)
+          .map((protocol) => ({
+            id: `wallet-protocol-${chainId}-${normalizedAddress}-${protocol.id}`,
+            accountId,
+            symbol: 'LP',
+            name: protocol.name,
+            holdings: 1,
+            currentPrice: protocol.usdValue,
+            change24h: 0,
+            type: 'crypto',
+            logo: protocol.logo,
+          }));
+
+        syncConnectedWalletAssets({
+          address: normalizedAddress,
+          chainId,
+          chainName: CHAIN_NAME_BY_ID[chainId] ?? `Chain ${chainId}`,
+          assets: [...tokenAssets, ...protocolAssets],
+        });
+        lastSyncedWalletKeyRef.current = walletKey;
+        lastConnectedWalletRef.current = { address: normalizedAddress, chainId };
+      } catch (error) {
+        console.warn('[AppSessionHydrator] Failed to sync DeBank data', error);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [address, authStatus, chainId, isConnected, syncConnectedWalletAssets]);
+
+  useEffect(() => {
+    if (isConnected && address) {
+      const normalizedAddress = normalizeAddress(address);
+      if (normalizedAddress) {
+        lastConnectedWalletRef.current = { address: normalizedAddress, chainId };
+      }
+      return;
+    }
+
+    // 自動斷線/切換錢包時不主動清除前端資料，僅重置同步狀態。
+    lastConnectedWalletRef.current = null;
+    lastSyncedWalletKeyRef.current = null;
+  }, [address, chainId, isConnected]);
 
   return null;
 }
