@@ -116,17 +116,8 @@ export default function TransactionsPage() {
   }, [transactions, keyword, dateFrom, dateTo, specificAmount, minAmount, maxAmount, amountDirection]);
 
   const summary = useMemo(() => {
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-
     return filteredTransactions.reduce(
       (acc, transaction) => {
-        const txDate = new Date(transaction.date);
-        if (txDate.getMonth() !== currentMonth || txDate.getFullYear() !== currentYear) {
-          return acc;
-        }
-
         const amount = parseAmount(transaction.amount);
         if (transaction.type === 'credit') {
           acc.moneyOut += amount;
@@ -291,7 +282,7 @@ export default function TransactionsPage() {
 
       <div className="mb-4 grid grid-cols-1 sm:grid-cols-3 gap-3 rounded-xl border border-[var(--kura-border)] bg-[var(--kura-surface)] p-4">
         <div>
-          <p className="text-xs text-[var(--kura-text-secondary)] uppercase tracking-wide">Net change this month</p>
+          <p className="text-xs text-[var(--kura-text-secondary)] uppercase tracking-wide">Net change</p>
           <p className={`mt-1 text-lg font-semibold ${metricColor(summary.netChange)}`}>
             {summary.netChange < 0 ? '-' : ''}
             {formatAmount(summary.netChange)}
