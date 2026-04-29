@@ -154,11 +154,6 @@ export async function setupSRP(payload: {
   await srpPost('/api/auth/srp/setup', payload);
 }
 
-/** 取得後端產生的新 Data Key（明文，單次使用） */
-export async function generateDataKey(): Promise<{ plainDataKey: string }> {
-  return srpPost('/api/auth/srp/generate-data-key', {});
-}
-
 /** 取得已登入用戶的 encryptedDataKey */
 export async function getEncryptedDataKey(): Promise<{ encryptedDataKey: string; kekSalt: string }> {
   return srpGet('/api/auth/srp/data-key');
