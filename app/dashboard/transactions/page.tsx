@@ -73,6 +73,7 @@ export default function TransactionsPage() {
   };
 
   const parseFilterNumber = (raw: string): number | null => {
+    if (raw.trim() === '') return null;
     const parsed = Number(raw);
     return Number.isFinite(parsed) ? Math.abs(parsed) : null;
   };
