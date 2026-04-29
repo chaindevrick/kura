@@ -272,7 +272,7 @@ export default function InvestmentPage() {
                 </div>
               </div>
 
-              <div className="h-72 xl:col-span-6 rounded-xl border border-[var(--kura-border)] bg-[var(--kura-bg-light)] p-3">
+              <div className="h-72 xl:col-span-6 rounded-xl border border-[var(--kura-border)] p-3">
                 {isLoadingAssetHistory ? (
                   <div className="w-full h-full rounded-lg bg-[var(--kura-border-light)] animate-pulse" />
                 ) : trendData.length > 0 ? (
