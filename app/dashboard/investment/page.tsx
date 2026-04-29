@@ -230,10 +230,11 @@ export default function InvestmentPage() {
                         border: '1px solid var(--kura-border)',
                         borderRadius: '8px',
                       }}
-                      formatter={(value: number, name, props) => {
+                      formatter={(value, name, props) => {
                         const percentage = props?.payload?.pct as number | undefined;
-                        const amount = maskIfHidden(isBalanceHidden, formatCurrency(value));
-                        return [percentage ? `${amount} (${formatPercent(percentage)})` : amount, name];
+                        const numericValue = typeof value === 'number' ? value : Number(value ?? 0);
+                        const amount = maskIfHidden(isBalanceHidden, formatCurrency(numericValue));
+                        return [percentage ? `${amount} (${formatPercent(percentage)})` : amount, name ?? 'Holding'];
                       }}
                     />
                   </PieChart>
