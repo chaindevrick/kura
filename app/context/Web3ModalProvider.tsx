@@ -52,7 +52,7 @@ function ensureAppKitInitialized() {
       icons: ['https://reown.com/logo.png'],
     },
     features: {
-      analytics: true,
+      analytics: false,
     },
   })
   appKitInitialized = true
