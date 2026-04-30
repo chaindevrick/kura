@@ -119,34 +119,50 @@ export default function TopNav() {
   return (
     <>
       <header className="w-full flex justify-between items-center px-6 py-2.5 bg-[var(--kura-bg)] z-40 shrink-0">
-        <div className="text-xs text-[var(--kura-text-secondary)] min-h-4">
-          {shouldShowSync
-            ? `Last synced: ${
-                lastSyncTime
-                  ? new Date(lastSyncTime).toLocaleString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })
-                  : 'Never'
-              }`
-            : ''}
+        <div className="text-xs text-[var(--kura-text-secondary)] min-h-4 flex items-center gap-2">
+          {shouldShowSync ? (
+            <>
+              <span>
+                {`Last synced: ${
+                  lastSyncTime
+                    ? new Date(lastSyncTime).toLocaleString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })
+                    : 'Never'
+                }`}
+              </span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => void handleSync()}
+                disabled={isSyncing}
+                aria-label="Sync data"
+                className="w-7 h-7 rounded-full border border-[var(--kura-border)] text-[var(--kura-text-secondary)] hover:text-[var(--kura-text)]"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`}
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M20 12a8 8 0 00-14.3-4.9" />
+                  <path d="M4 4v4h4" />
+                  <path d="M4 12a8 8 0 0014.3 4.9" />
+                  <path d="M20 20v-4h-4" />
+                </svg>
+              </Button>
+            </>
+          ) : null}
         </div>
         {/* 右側控制區 */}
         <div className="flex items-center gap-4">
-          {shouldShowSync && (
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              onClick={() => void handleSync()}
-              disabled={isSyncing}
-              className="h-8 px-3"
-            >
-              {isSyncing ? 'Syncing...' : 'Sync'}
-            </Button>
-          )}
           <Button
             type="button"
             variant="ghost"
