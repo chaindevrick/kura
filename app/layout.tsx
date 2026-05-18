@@ -29,10 +29,10 @@ export const metadata: Metadata = {
     siteName: "Kura",
     images: [
       {
-        url: '/ios/AppIcon.appiconset/icon-1024.png',
-        width: 1024,
-        height: 1024,
-        alt: 'Kura Icon',
+        url: '/og.svg',
+        width: 1200,
+        height: 630,
+        alt: 'Kura — One app to manage your financial life, from TradFi to crypto.',
       },
     ],
     type: 'website',
@@ -41,7 +41,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: "Kura | One app to manage your all financial from tradfi to crypto.",
     description: "Kura | One app to manage your all financial from tradfi to crypto.",
-    images: '/ios/AppIcon.appiconset/icon-1024.png',
+    images: '/og.svg',
   },
 };
 
